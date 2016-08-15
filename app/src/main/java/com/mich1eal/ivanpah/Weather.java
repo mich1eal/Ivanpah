@@ -20,6 +20,7 @@ import java.net.URL;
  * Created by Michael on 7/25/2016.
  */
 public class Weather
+    extends JSONGetter
 {
     private static final String TAG = "WEATHER";
     private static final String APIKey = "310a6b004645167adf0d695576d45819";
@@ -38,11 +39,7 @@ public class Weather
     private String precipType;
     private boolean isPrecip;
 
-    public Weather()
-    {
-        Log.e(TAG, "THIS CONSTRUCTOR DOES NOT WORK");
-        Assert.assertTrue(false);
-    }
+    private Weather(){}
 
     public Weather(LocationManager manager, WeatherUpdateListener listener)
     {
@@ -58,6 +55,14 @@ public class Weather
     public String getPrecipType(){return precipType;}
     public boolean hasValues(){return hasValues;}
     public boolean isPrecip(){return isPrecip;}
+
+    @Override
+    protected void onComplete(JSONObject json)
+    {
+        lastJSON = json;
+        updateData();
+        listener.onWeatherDataChange();
+    }
 
     public void getNewData()
     {
@@ -79,7 +84,7 @@ public class Weather
                 lastLoc.getLatitude() + ',' +
                 lastLoc.getLongitude();
 
-        new AsyncHttp().execute(apiurl);
+        super.getJSON(apiurl);
     }
 
     private String getCondString(String in)
@@ -121,7 +126,6 @@ public class Weather
             hasValues = false;
             return;
         }
-
         hasValues = true;
 
         try
@@ -147,69 +151,10 @@ public class Weather
         {
             Log.e(TAG, e.getMessage());
         }
-
-        listener.onWeatherDataChange();
     }
 
     public interface WeatherUpdateListener
     {
         public void onWeatherDataChange();
-    }
-
-    private class AsyncHttp extends AsyncTask<String, String, JSONObject>
-    {
-        @Override
-        protected void onPreExecute()
-        {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected JSONObject doInBackground(String... params)
-        {
-            try
-            {
-                URL url = new URL(params[0]);
-                Log.d(TAG, url.toString());
-                HttpURLConnection con = (HttpURLConnection) url.openConnection();
-                Log.d(TAG, "Response code from Dark Sky API: " + con.getResponseCode());
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
-                StringBuffer json = new StringBuffer();
-
-                String line = null;
-                while((line = reader.readLine()) != null)
-                {
-                    json.append(line).append('\n');
-                }
-                reader.close();
-
-                return new JSONObject(json.toString());
-            }
-            catch(Exception e){
-                Log.e(TAG, "lol there was an error");
-                if (e != null) e.printStackTrace();
-            }
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(String... str)
-        {
-            super.onProgressUpdate();
-        }
-
-        @Override
-        protected void onPostExecute(JSONObject json)
-        {
-            super.onPostExecute(json);
-            if (json != null)
-            {
-                lastJSON = json;
-            }
-            else Log.e(TAG, "No json recieved");
-
-            updateData();
-        }
     }
 }

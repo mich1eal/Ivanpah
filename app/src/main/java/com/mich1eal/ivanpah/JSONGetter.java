@@ -13,71 +13,66 @@ import java.net.URL;
 /**
  * Created by Michael on 8/14/2016.
  */
-public class JSONGetter extends AsyncTask<String, String, JSONObject>
+public abstract class JSONGetter
 {
     private static final String TAG = "AsyncHttp";
+    protected abstract void onComplete(JSONObject json);
 
-    private static CompletionListener listener;
-
-    private JSONGetter(){} // Don't instantitate w/o listener
-
-    public JSONGetter(CompletionListener listener)
+    protected void getJSON(String url)
     {
-        this.listener = listener;
+        new AsyncHttp().execute(url);
     }
 
-
-
-    @Override
-    protected void onPreExecute()
+    private class AsyncHttp extends AsyncTask<String, String, JSONObject>
     {
-        super.onPreExecute();
-    }
 
-    @Override
-    protected JSONObject doInBackground(String... params)
-    {
-        try
+        @Override
+        protected void onPreExecute()
         {
-            URL url = new URL(params[0]);
-            Log.d(TAG, url.toString());
-            HttpURLConnection con = (HttpURLConnection) url.openConnection();
-            Log.d(TAG, "Response code = " + con.getResponseCode());
+            super.onPreExecute();
+        }
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
-            StringBuffer json = new StringBuffer();
-
-            String line = null;
-            while((line = reader.readLine()) != null)
+        @Override
+        protected JSONObject doInBackground(String... params)
+        {
+            try
             {
-                json.append(line).append('\n');
+                URL url = new URL(params[0]);
+                Log.d(TAG, url.toString());
+                HttpURLConnection con = (HttpURLConnection) url.openConnection();
+                Log.d(TAG, "Response code = " + con.getResponseCode());
+
+                BufferedReader reader = new BufferedReader(new InputStreamReader(con.getInputStream()));
+                StringBuffer json = new StringBuffer();
+
+                String line = null;
+                while ((line = reader.readLine()) != null)
+                {
+                    json.append(line).append('\n');
+                }
+                reader.close();
+
+                return new JSONObject(json.toString());
+            } catch (Exception e)
+            {
+                Log.e(TAG, "An error occured getting json");
+                if (e != null) e.printStackTrace();
             }
-            reader.close();
-
-            return new JSONObject(json.toString());
+            return null;
         }
-        catch(Exception e){
-            Log.e(TAG, "An error occured getting json");
-            if (e != null) e.printStackTrace();
+
+        @Override
+        protected void onProgressUpdate(String... str)
+        {
+            super.onProgressUpdate();
         }
-        return null;
-    }
 
-    @Override
-    protected void onProgressUpdate(String... str)
-    {
-        super.onProgressUpdate();
-    }
-
-    @Override
-    protected void onPostExecute(JSONObject json)
-    {
-        if (json == null) Log.e(TAG, "Json is null");
-        else listener.onComplete(json);
-    }
-
-    public interface CompletionListener
-    {
-        public void onComplete(JSONObject json);
+        @Override
+        protected void onPostExecute(JSONObject json)
+        {
+            super.onPostExecute(json);
+            if (json == null) Log.e(TAG, "Json is null");
+            else onComplete(json);
+        }
     }
 }
