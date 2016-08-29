@@ -3,7 +3,8 @@
     <string name="time_format">h:mm</string>
     <string name="date_format">EEEE, MMMM d</string>
     <string name="placeholder">-</string>
-
+    <string name="bluetooth_name">Ivanpah Smart Mirror</string>
+    <string name="no_bluetooth">Sorry, Ivanpah only works on bluetooth enabled devices</string>
 
     <string name="wi_day_sunny">&#xf00d;</string>
     <string name="wi_day_cloudy">&#xf002;</string>

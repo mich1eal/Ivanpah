@@ -1,6 +1,8 @@
 package com.mich1eal.ivanpah;
 
 import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.content.Intent;
 import android.graphics.Typeface;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -9,6 +11,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Timer;
 import java.util.TimerTask;
@@ -17,6 +20,7 @@ public class Main extends Activity
     implements Weather.WeatherUpdateListener
 {
     private static Weather weather;
+    private static Duolingo duolingo;
     private final static long delay = 5 * 60 * 1000;
     private static TextView temp, max, min, icon,precipType, precipPercent;
     private static LinearLayout precipBox;
@@ -29,8 +33,8 @@ public class Main extends Activity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        weather = new Weather((LocationManager) getSystemService(LOCATION_SERVICE), this);
 
+        // Initialize views that will need to be updated
         temp = (TextView) findViewById(R.id.temp);
         max = (TextView) findViewById(R.id.max);
         min = (TextView) findViewById(R.id.min);
@@ -39,9 +43,36 @@ public class Main extends Activity
         precipType = (TextView) findViewById(R.id.precipType);
         precipPercent = (TextView) findViewById(R.id.precipPercent);
 
+        // Initialize data fetchers
+        weather = new Weather((LocationManager) getSystemService(LOCATION_SERVICE), this);
+        duolingo = new Duolingo();
+
+        // Set up bluetooth
+        BluetoothAdapter bAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (bAdapter == null)//If device has bluetooth
+        {
+            Toast.makeText(this,
+                    getResources().getString(R.string.no_bluetooth),
+                    Toast.LENGTH_LONG).show();
+        }
+        else //Else device has bluetooth
+        {
+            // Set name of device to app name
+            bAdapter.setName(getResources().getString(R.string.bluetooth_name));
+
+            // Make device always discoverable
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            enableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
+            startActivity(enableIntent); //Automatically asks for permission
+
+
+        }
+
+        // Initialize font for weather icons
         defaultFont = icon.getTypeface();
         weatherFont = Typeface.createFromAsset(getAssets(), "fonts/weather.ttf");
 
+        // Set up timer for recurring tasks
         TimerTask updater = getUpdater(new Handler());
         Timer timer = new Timer();
         timer.schedule(updater, 0, delay);
@@ -61,6 +92,7 @@ public class Main extends Activity
                     public void run()
                     {
                         weather.getNewData();
+                        duolingo.getStatus();
                     }
                 });
             }
