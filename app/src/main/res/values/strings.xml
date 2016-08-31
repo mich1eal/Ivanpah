@@ -1,11 +1,28 @@
 <resources>
+
     <string name="app_name">Ivanpah</string>
+
     <string name="time_format">h:mm</string>
     <string name="date_format">EEEE, MMMM d</string>
+
     <string name="placeholder">-</string>
     <string name="bluetooth_name">Ivanpah Smart Mirror</string>
     <string name="no_bluetooth">Sorry, Ivanpah only works on bluetooth enabled devices</string>
 
+    <string name="setup_welcome">Welcome to Ivanpah! Please configure your device.</string>
+    <string name="setup_device">How will this device be used?</string>
+    <string name="setup_mirror">Smart Mirror</string>
+    <string name="setup_phone">Mirror controller</string>
+    <string name="setup_go">Start</string>
+    <string name="setup_select">Please select a configuration!</string>
+
+
+
+    <!-- Strings for memory !-->
+    <string name="config">config</string>
+    <string name="prefs">SHARED_PREF_1</string>
+
+    <!-- Weather icons used by weather font !-->
     <string name="wi_day_sunny">&#xf00d;</string>
     <string name="wi_day_cloudy">&#xf002;</string>
     <string name="wi_day_cloudy_gusts">&#xf000;</string>
@@ -108,9 +125,6 @@
     <string name="wi_volcano">&#xf0c8;</string>
     <string name="wi_hurricane">&#xf073;</string>
     <string name="wi_tornado">&#xf056;</string>
-
-
-
 
 
 </resources>

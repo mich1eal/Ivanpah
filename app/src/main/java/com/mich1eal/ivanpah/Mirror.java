@@ -16,23 +16,22 @@ import android.widget.Toast;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class Main extends Activity
+public class Mirror extends Activity
     implements Weather.WeatherUpdateListener
 {
     private static Weather weather;
     private static Duolingo duolingo;
-    private final static long delay = 5 * 60 * 1000;
+    private final static long weatherDelay = 5 * 60 * 1000;
     private static TextView temp, max, min, icon,precipType, precipPercent;
     private static LinearLayout precipBox;
     private static Typeface weatherFont;
     private static Typeface defaultFont;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_mirror);
 
         // Initialize views that will need to be updated
         temp = (TextView) findViewById(R.id.temp);
@@ -64,8 +63,6 @@ public class Main extends Activity
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
             enableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
             startActivity(enableIntent); //Automatically asks for permission
-
-
         }
 
         // Initialize font for weather icons
@@ -75,9 +72,8 @@ public class Main extends Activity
         // Set up timer for recurring tasks
         TimerTask updater = getUpdater(new Handler());
         Timer timer = new Timer();
-        timer.schedule(updater, 0, delay);
+        timer.schedule(updater, 0, weatherDelay);
     }
-
 
     public TimerTask getUpdater(final Handler handler)
     {
