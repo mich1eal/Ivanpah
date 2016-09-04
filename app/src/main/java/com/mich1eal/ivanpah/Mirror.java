@@ -22,10 +22,10 @@ public class Mirror extends Activity
     private static Weather weather;
     private static Duolingo duolingo;
     private final static long weatherDelay = 5 * 60 * 1000;
-    private static TextView temp, max, min, icon,precipType, precipPercent;
-    private static LinearLayout precipBox;
-    private static Typeface weatherFont;
-    private static Typeface defaultFont;
+    private final static double minRainDisplay = .09; //Will not display rain chance below this prob
+    private static TextView temp, max, min, icon,precipType, precipPercent, alarmIcon, alarmText;
+    private static LinearLayout precipTile;
+    private static Typeface weatherFont, iconFont, defaultFont;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -38,9 +38,11 @@ public class Mirror extends Activity
         max = (TextView) findViewById(R.id.max);
         min = (TextView) findViewById(R.id.min);
         icon = (TextView) findViewById(R.id.icon);
-        precipBox = (LinearLayout) findViewById(R.id.precipBox);
+        precipTile = (LinearLayout) findViewById(R.id.precipTile);
         precipType = (TextView) findViewById(R.id.precipType);
         precipPercent = (TextView) findViewById(R.id.precipPercent);
+        alarmIcon = (TextView) findViewById(R.id.alarmIcon);
+        alarmText = (TextView) findViewById(R.id.alarmText);
 
         // Initialize data fetchers
         weather = new Weather((LocationManager) getSystemService(LOCATION_SERVICE), this);
@@ -65,9 +67,14 @@ public class Mirror extends Activity
             startActivity(enableIntent); //Automatically asks for permission
         }
 
-        // Initialize font for weather icons
+        // Initialize fonts
         defaultFont = icon.getTypeface();
         weatherFont = Typeface.createFromAsset(getAssets(), "fonts/weather.ttf");
+        iconFont = Typeface.createFromAsset(getAssets(), "fonts/heydings_icons.ttf");
+
+        // Initialize constant fonts
+        precipType.setTypeface(weatherFont);
+        alarmIcon.setTypeface(iconFont);
 
         // Set up timer for recurring tasks
         TimerTask updater = getUpdater(new Handler());
@@ -125,8 +132,8 @@ public class Mirror extends Activity
             icon.setTypeface(defaultFont);
         }
 
-        // Set precip box
-        if (weather.getPrecipChance() > .09 && !weather.isPrecip())
+        // Set precip tile
+        if (weather.getPrecipChance() > minRainDisplay && !weather.isPrecip())
         {
             String precipString = weather.getPrecipType();
 
@@ -138,15 +145,14 @@ public class Mirror extends Activity
             {
                 int id = getResources().getIdentifier(precipString, "string", getPackageName());
                 precipType.setText(getResources().getString(id));
-                precipType.setTypeface(weatherFont);
-                precipBox.setVisibility(View.VISIBLE);
+                precipTile.setVisibility(View.VISIBLE);
             } catch (Exception e)
             {
                 Log.d("MAIN", "No icon found for String " + precipString);
-                precipBox.setVisibility(View.GONE);
+                precipTile.setVisibility(View.GONE);
             }
         }
-        else precipBox.setVisibility(View.GONE);
+        else precipTile.setVisibility(View.GONE);
     }
 
     private void setImmersive()

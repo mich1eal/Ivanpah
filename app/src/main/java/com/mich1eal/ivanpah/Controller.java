@@ -13,5 +13,13 @@ public class Controller extends Activity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mirror);
+
+        //Set up bluetooth
+
+
+
+
+
+
     }
 }

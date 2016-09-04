@@ -16,6 +16,8 @@
     <string name="setup_go">Start</string>
     <string name="setup_select">Please select a configuration!</string>
 
+    <string name="alarm_icon">T</string>
+    <string name="alarm_test">6:45 AM</string>
 
 
     <!-- Strings for memory !-->
