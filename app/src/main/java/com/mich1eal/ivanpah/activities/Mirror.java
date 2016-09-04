@@ -1,4 +1,4 @@
-package com.mich1eal.ivanpah;
+package com.mich1eal.ivanpah.activities;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -13,13 +13,17 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.mich1eal.ivanpah.Duolingo;
+import com.mich1eal.ivanpah.JSONGetter;
+import com.mich1eal.ivanpah.R;
+
 import java.util.Timer;
 import java.util.TimerTask;
 
 public class Mirror extends Activity
-    implements Weather.WeatherUpdateListener
+    implements JSONGetter.Weather.WeatherUpdateListener
 {
-    private static Weather weather;
+    private static JSONGetter.Weather weather;
     private static Duolingo duolingo;
     private final static long weatherDelay = 5 * 60 * 1000;
     private final static double minRainDisplay = .09; //Will not display rain chance below this prob
@@ -45,7 +49,7 @@ public class Mirror extends Activity
         alarmText = (TextView) findViewById(R.id.alarmText);
 
         // Initialize data fetchers
-        weather = new Weather((LocationManager) getSystemService(LOCATION_SERVICE), this);
+        weather = new JSONGetter.Weather((LocationManager) getSystemService(LOCATION_SERVICE), this);
         duolingo = new Duolingo();
 
         // Set up bluetooth

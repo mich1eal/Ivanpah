@@ -1,7 +1,9 @@
-package com.mich1eal.ivanpah;
+package com.mich1eal.ivanpah.activities;
 
 import android.app.Activity;
 import android.os.Bundle;
+
+import com.mich1eal.ivanpah.R;
 
 /**
  * Created by Michael on 8/30/2016.

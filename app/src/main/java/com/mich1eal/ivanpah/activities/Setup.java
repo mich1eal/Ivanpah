@@ -1,15 +1,15 @@
-package com.mich1eal.ivanpah;
+package com.mich1eal.ivanpah.activities;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.RadioGroup;
 import android.widget.TextView;
-import android.widget.Toast;
+
+import com.mich1eal.ivanpah.R;
 
 /**
  * Created by Michael on 8/30/2016.
