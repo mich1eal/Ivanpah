@@ -13,6 +13,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.mich1eal.ivanpah.BluetoothWrapper;
 import com.mich1eal.ivanpah.Duolingo;
 import com.mich1eal.ivanpah.JSONGetter;
 import com.mich1eal.ivanpah.R;
@@ -26,10 +27,11 @@ public class Mirror extends Activity
     private static JSONGetter.Weather weather;
     private static Duolingo duolingo;
     private final static long weatherDelay = 5 * 60 * 1000;
-    private final static double minRainDisplay = .09; //Will not display rain chance below this prob
+    private final static double minRainDisplay = .1; //Minimum threshold for displaying rain prob
     private static TextView temp, max, min, icon,precipType, precipPercent, alarmIcon, alarmText;
     private static LinearLayout precipTile;
     private static Typeface weatherFont, iconFont, defaultFont;
+    private static BluetoothWrapper bWrap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -52,8 +54,13 @@ public class Mirror extends Activity
         weather = new JSONGetter.Weather((LocationManager) getSystemService(LOCATION_SERVICE), this);
         duolingo = new Duolingo();
 
+
+
         // Set up bluetooth
-        BluetoothAdapter bAdapter = BluetoothAdapter.getDefaultAdapter();
+        bWrap = new BluetoothWrapper(this, true);
+
+
+        /*BluetoothAdapter bAdapter = BluetoothAdapter.getDefaultAdapter();
         if (bAdapter == null)//If device has bluetooth
         {
             Toast.makeText(this,
@@ -69,7 +76,7 @@ public class Mirror extends Activity
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
             enableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
             startActivity(enableIntent); //Automatically asks for permission
-        }
+        }*/
 
         // Initialize fonts
         defaultFont = icon.getTypeface();
@@ -137,7 +144,8 @@ public class Mirror extends Activity
         }
 
         // Set precip tile
-        if (weather.getPrecipChance() > minRainDisplay && !weather.isPrecip())
+        //If precip chance is over threshold and its not already raining
+        if (weather.getPrecipChance() >= minRainDisplay && !weather.isPrecip())
         {
             String precipString = weather.getPrecipType();
 
@@ -169,4 +177,22 @@ public class Mirror extends Activity
                     | View.SYSTEM_UI_FLAG_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        Log.d("MIRROR", "onActivityResult");
+        Log.d("MIRROR", "resultCode = " + resultCode);
+        Log.d("MIRROR", "requestCode = " + requestCode);
+        Log.d("MIRROR", "result ok = " + RESULT_OK);
+        if (requestCode == 5)
+        {
+            Log.d("MIRROR", "Thanks for enable btooth, yo");
+            bWrap.connectDevices();
+
+        }
+
+    }
+
+
 }

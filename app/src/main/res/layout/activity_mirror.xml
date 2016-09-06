@@ -83,9 +83,6 @@
                 android:layout_gravity="center_horizontal"
                 android:textColor="@android:color/white"
                 android:textSize="150sp"
-                android:layout_marginTop="-10dp"
-                android:paddingLeft="75dp"
-                android:paddingRight="75dp"
                 android:text="@string/placeholder"
                 />
 
@@ -129,12 +126,12 @@
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:id="@+id/precipTile"
             android:orientation="vertical"
             android:background="@drawable/tile_thin_white"
             android:layout_marginTop="80dp"
-            android:id="@+id/precipTile"
             android:padding="15dp"
-            android:layout_marginRight="10dp">
+            android:layout_marginLeft="10dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -148,7 +145,7 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/precipPercent"
                 android:textColor="@android:color/white"
-                android:textSize="70dp"/>
+                android:textSize="50dp"/>
 
         </LinearLayout> <!-- end precip tile -->
 
