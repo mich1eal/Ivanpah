@@ -3,21 +3,49 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical"
-              android:background="#000000"
-              tools:context=".setup">
+              tools:context=".controller">
 
-    <TextView
-        android:layout_width="match_parent"
+    <LinearLayout
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/setup_welcome"
-        android:textColor="@android:color/white"
-        android:textStyle="bold"
-        android:id="@+id/setup_welcome"/>
+        android:orientation="horizontal"
+        android:layout_gravity="left">
 
-    <TextView
-        android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/control_status"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/status_disconnect"
+            android:id="@+id/control_status"/>
+
+    </LinearLayout>
+
+    <Button
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/setup_device"
-        android:textColor="@android:color/white"/>
+        android:id="@+id/control_retry"
+        android:text="@string/control_retry"/>
+
+    <TimePicker
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/control_time_pick">
+    </TimePicker>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/control_send"
+        android:text="@string/control_send"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/control_cancel"
+        android:text="@string/control_cancel"/>
 
 </LinearLayout>

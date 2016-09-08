@@ -10,7 +10,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -19,34 +18,47 @@ import java.util.UUID;
 /**
  * Created by Michael on 9/4/2016.
  */
-public class BluetoothWrapper
+public class bWrapper
 {
-    private static final String TAG = BluetoothWrapper.class.getSimpleName();
+    private static final String TAG = bWrapper.class.getSimpleName();
     private static final String SERVER_NAME = "Ivanpah Smart Mirror";
     private static final String UUID = "d3cb33f4-094f-4b55-b23e-e5d771ab2f92";
+
+    public static final int STATUS_DISCONNECT = 0;
+    public static final int STATUS_PAIRED = 1;
+    public static final int STATUS_CONNECTED = 2;
+    public static final int STATUS_SEARCHING = 3;
+    public static final int STATUS_NOT_FOUND = 4;
+    public static final int STATUS_NO_BLUETOOTH = 5;
+    public static final int STATUS_CONNECTING = 6;
+    public static final int STATUS_ERROR = -1;
+
+
     private boolean isServer;
+
     private Context context;
-
+    private bStatusListener listener = null;
     private BluetoothAdapter bAdapter;
+    private boolean mirrorFound = false;
+    private bWrapper(){}; // Must properly intitialize
 
 
-    // Must properly intitialize
-    private BluetoothWrapper(){};
-
-
-    public BluetoothWrapper(Context context, boolean isServer)
+    public bWrapper(Context context, boolean isServer, bStatusListener listener)
     {
         this.isServer = isServer;
         this.context = context;
+        this.listener = listener;
 
         bAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (bAdapter == null)//If device has bluetooth
+        Log.d(TAG, "Bluetooth enabled? : " + bAdapter.isEnabled());
+        if (bAdapter == null || !bAdapter.isEnabled())//If device has bluetooth
         {
-            String msg = context.getResources().getString(R.string.no_bluetooth);
-            Toast.makeText(context, msg, Toast.LENGTH_LONG).show();
+            if (listener != null) listener.onStatusChange(STATUS_NO_BLUETOOTH);
         }
+
         else //Else device has bluetooth
         {
+            if (listener != null) listener.onStatusChange(STATUS_DISCONNECT);
             // Set name and set to always be discoverable (if mirror)
             if (isServer)
             {
@@ -61,6 +73,16 @@ public class BluetoothWrapper
 
     public void connectDevices()
     {
+        mirrorFound = false;
+
+        if (bAdapter == null || !bAdapter.isEnabled())//If device has bluetooth
+        {
+            if (listener != null) listener.onStatusChange(STATUS_NO_BLUETOOTH);
+            return;
+        }
+
+        if (listener != null) listener.onStatusChange(STATUS_SEARCHING);
+
         if (isServer)
         {
             new ServerThread().start();
@@ -78,6 +100,7 @@ public class BluetoothWrapper
             Log.d(TAG, "Found a pre-paired device: name = " + device.getName() + " at " + device.getAddress());
             if (device.getName().equals(SERVER_NAME))
             {
+                if (listener != null) listener.onStatusChange(STATUS_CONNECTED);
                 new ClientThread(device).start();
                 return;
             }
@@ -97,14 +120,29 @@ public class BluetoothWrapper
                     Log.d(TAG, "Device found, name = " + device.getName());
                     if (device.getName().equals(SERVER_NAME));
                     {
+                        if (listener != null) listener.onStatusChange(STATUS_CONNECTED);
+                        mirrorFound = true;
                         new ClientThread(device).start();
                     }
+                }
+                else if (action.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED) && !mirrorFound)
+                {
+                    if (listener != null) listener.onStatusChange(STATUS_NOT_FOUND);
+                }
+                else if(action.equals(BluetoothDevice.ACTION_ACL_DISCONNECTED))
+                {
+                    if (listener != null) listener.onStatusChange(STATUS_DISCONNECT);
                 }
             }
         };
 
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         context.registerReceiver(receiver, filter);
+
+
         bAdapter.startDiscovery();
 
         //Log.d(TAG, "No servers found");
@@ -237,10 +275,11 @@ public class BluetoothWrapper
     }
 
     //Interface to be implemented by mirror to notify when a new message has been recieved
-    public interface bListener
+    public interface bStatusListener
     {
+
         //If a string is returned, it will be sent back to client
-        public String onMessage(String msg);
+        public void onStatusChange(int status);
     }
 
 }

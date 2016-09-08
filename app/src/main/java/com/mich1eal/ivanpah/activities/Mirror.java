@@ -1,7 +1,6 @@
 package com.mich1eal.ivanpah.activities;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.location.LocationManager;
@@ -11,9 +10,8 @@ import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import com.mich1eal.ivanpah.BluetoothWrapper;
+import com.mich1eal.ivanpah.bWrapper;
 import com.mich1eal.ivanpah.Duolingo;
 import com.mich1eal.ivanpah.JSONGetter;
 import com.mich1eal.ivanpah.R;
@@ -31,7 +29,7 @@ public class Mirror extends Activity
     private static TextView temp, max, min, icon,precipType, precipPercent, alarmIcon, alarmText;
     private static LinearLayout precipTile;
     private static Typeface weatherFont, iconFont, defaultFont;
-    private static BluetoothWrapper bWrap;
+    private static bWrapper bWrap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -57,7 +55,7 @@ public class Mirror extends Activity
 
 
         // Set up bluetooth
-        bWrap = new BluetoothWrapper(this, true);
+        bWrap = new bWrapper(this, true, null);
 
 
         /*BluetoothAdapter bAdapter = BluetoothAdapter.getDefaultAdapter();

@@ -16,6 +16,22 @@
     <string name="setup_go">Start</string>
     <string name="setup_select">Please select a configuration!</string>
 
+    <string name="control_status">Bluetooth status: </string>
+    <string name="control_send">Set Alarm</string>
+    <string name="control_cancel">Cancel Alarm</string>
+    <string name="control_retry">Try again</string>
+
+    <string name="status_connect">connected</string>
+    <string name="status_searching">searching...</string>
+    <string name="status_error">error</string>
+    <string name="status_disconnect">not connected</string>
+    <string name="status_not_found">no mirrors found</string>
+    <string name="status_no_bluetooth">Bluetooth disabled or not available</string>
+
+
+
+
+
     <string name="alarm_icon">T</string>
     <string name="alarm_test">6:45 AM</string>
 
