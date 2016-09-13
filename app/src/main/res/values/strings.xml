@@ -26,6 +26,7 @@
     <string name="status_error">error</string>
     <string name="status_disconnect">not connected</string>
     <string name="status_not_found">no mirrors found</string>
+    <string name="status_found">mirror found</string>
     <string name="status_no_bluetooth">Bluetooth disabled or not available</string>
 
 

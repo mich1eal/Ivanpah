@@ -9,9 +9,14 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -22,85 +27,94 @@ public class bWrapper
 {
     private static final String TAG = bWrapper.class.getSimpleName();
     private static final String SERVER_NAME = "Ivanpah Smart Mirror";
-    private static final String UUID = "d3cb33f4-094f-4b55-b23e-e5d771ab2f92";
-
-    public static final int STATUS_DISCONNECT = 0;
-    public static final int STATUS_PAIRED = 1;
-    public static final int STATUS_CONNECTED = 2;
-    public static final int STATUS_SEARCHING = 3;
-    public static final int STATUS_NOT_FOUND = 4;
-    public static final int STATUS_NO_BLUETOOTH = 5;
-    public static final int STATUS_CONNECTING = 6;
-    public static final int STATUS_ERROR = -1;
+    private static final UUID uuid = UUID.fromString("d3cb33f4-094f-4b55-b23e-e5d771ab2f92");
 
 
-    private boolean isServer;
+    public static final int MESSAGE_READ = 99;
+    public static final int STATE_CONNECTED = 2;
+    public static final int STATE_SEARCHING = 3;
+    public static final int STATE_NOT_FOUND = 4;
+    public static final int STATE_NO_BLUETOOTH = 5;
+    public static final int STATE_FOUND = 6;
 
+    public static final int STATE_ERROR = -1;
+
+    private int state;
     private Context context;
-    private bStatusListener listener = null;
     private BluetoothAdapter bAdapter;
-    private boolean mirrorFound = false;
-    private bWrapper(){}; // Must properly intitialize
+    private boolean serverFound = false;
+    private Handler handler;
+
+    private ConnectedThread connectedThread;
 
 
-    public bWrapper(Context context, boolean isServer, bStatusListener listener)
+    public bWrapper(Context context, Handler handler)
     {
-        this.isServer = isServer;
+        assert(context != null);
+
         this.context = context;
-        this.listener = listener;
+        this.handler = handler;
 
         bAdapter = BluetoothAdapter.getDefaultAdapter();
-        Log.d(TAG, "Bluetooth enabled? : " + bAdapter.isEnabled());
-        if (bAdapter == null || !bAdapter.isEnabled())//If device has bluetooth
-        {
-            if (listener != null) listener.onStatusChange(STATUS_NO_BLUETOOTH);
-        }
+    }
 
-        else //Else device has bluetooth
+    private void setState(int state)
+    {
+        //Update state and notify handler
+        this.state = state;
+        if (handler != null)
         {
-            if (listener != null) listener.onStatusChange(STATUS_DISCONNECT);
-            // Set name and set to always be discoverable (if mirror)
-            if (isServer)
-            {
-                bAdapter.setName(SERVER_NAME);
-                Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-                enableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
-                ((Activity) context).startActivityForResult(enableIntent, 5);
-
-            }
+            handler.sendEmptyMessage(state);
         }
     }
 
-    public void connectDevices()
+    private boolean hasBluetooth()
     {
-        mirrorFound = false;
-
-        if (bAdapter == null || !bAdapter.isEnabled())//If device has bluetooth
+        if (bAdapter == null || !bAdapter.isEnabled())//If device doesn't have bluetooth
         {
-            if (listener != null) listener.onStatusChange(STATUS_NO_BLUETOOTH);
-            return;
+            setState(STATE_NO_BLUETOOTH);
+            return false;
         }
+        return true;
+    }
 
-        if (listener != null) listener.onStatusChange(STATUS_SEARCHING);
+    public void startServer()
+    {
+        //If no bluetooth, exit.
+        if (!hasBluetooth()) return;
 
-        if (isServer)
-        {
-            new ServerThread().start();
-            return;
-        }
+        bAdapter.setName(SERVER_NAME);
+        Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+        enableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
+        ((Activity) context).startActivityForResult(enableIntent, 5);
+    }
+
+    //This method needs to be called by the host activity after getting the activity result back
+    // from startSever(). This is a terrible implementation and should be fixed
+    public void finishServer()
+    {
+        new ServerThread().start();
+    }
+
+    public void startClient()
+    {
+        //If no bluetooth, exit.
+        if (!hasBluetooth()) return;
+
+        if(state == STATE_CONNECTED) return;
+        setState(STATE_SEARCHING);
 
         // First check for already established pairings
         ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
         pairedDevices.addAll(bAdapter.getBondedDevices());
 
-        // First go through paired devices
+        // Look for prepaired servers
         if (pairedDevices.size() > 0)
         {
             BluetoothDevice device = pairedDevices.get(0);
             Log.d(TAG, "Found a pre-paired device: name = " + device.getName() + " at " + device.getAddress());
             if (device.getName().equals(SERVER_NAME))
             {
-                if (listener != null) listener.onStatusChange(STATUS_CONNECTED);
                 new ClientThread(device).start();
                 return;
             }
@@ -117,21 +131,17 @@ public class bWrapper
                 if (action.equals(BluetoothDevice.ACTION_FOUND)) //device found
                 {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    Log.d(TAG, "Device found, name = " + device.getName());
-                    if (device.getName().equals(SERVER_NAME));
+                    Log.d(TAG, "Device found: " + device.toString());
+                    if (device.getName().equals(SERVER_NAME))
                     {
-                        if (listener != null) listener.onStatusChange(STATUS_CONNECTED);
-                        mirrorFound = true;
                         new ClientThread(device).start();
                     }
                 }
-                else if (action.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED) && !mirrorFound)
+                else if (action.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+                        && state != STATE_FOUND
+                        && state != STATE_CONNECTED)
                 {
-                    if (listener != null) listener.onStatusChange(STATUS_NOT_FOUND);
-                }
-                else if(action.equals(BluetoothDevice.ACTION_ACL_DISCONNECTED))
-                {
-                    if (listener != null) listener.onStatusChange(STATUS_DISCONNECT);
+                    setState(STATE_NOT_FOUND);
                 }
             }
         };
@@ -139,9 +149,7 @@ public class bWrapper
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_FOUND);
         filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
         context.registerReceiver(receiver, filter);
-
 
         bAdapter.startDiscovery();
 
@@ -160,8 +168,6 @@ public class bWrapper
             BluetoothServerSocket tmp = null;
             try
             {
-                // MY_UUID is the app's UUID string, also used by the client code
-                UUID uuid = java.util.UUID.randomUUID();
                 tmp = bAdapter.listenUsingRfcommWithServiceRecord(SERVER_NAME, uuid);
             }
             catch (IOException e)
@@ -173,7 +179,7 @@ public class bWrapper
 
         public void run() {
             Log.d(TAG, "Server Thread is running!");
-            BluetoothSocket socket = null;
+            BluetoothSocket socket;
             // Keep listening until exception occurs or a socket is returned
             while (true)
             {
@@ -191,6 +197,9 @@ public class bWrapper
                 {
                     // Do work to manage the connection (in a separate thread)
                     //manageConnectedSocket(socket);
+                    setState(STATE_CONNECTED);
+                    connectedThread = new ConnectedThread(socket);
+                    connectedThread.start();
                     Log.d(TAG, "Socket is open!");
                     //serverSocket.close();
                     break;
@@ -208,26 +217,26 @@ public class bWrapper
 
     private class ClientThread extends Thread
     {
-        private final BluetoothSocket mmSocket;
-        private final BluetoothDevice mmDevice;
+        private final BluetoothSocket socket;
+        private final BluetoothDevice client;
 
-        public ClientThread(BluetoothDevice device)
+        public ClientThread(BluetoothDevice client)
         {
             // Use a temporary object that is later assigned to mmSocket,
             // because mmSocket is final
+            setState(STATE_FOUND);
             BluetoothSocket tmp = null;
-            mmDevice = device;
+            this.client = client;
 
             // Get a BluetoothSocket to connect with the given BluetoothDevice
             try
             {
-                UUID uuid = java.util.UUID.randomUUID();
-                tmp = device.createRfcommSocketToServiceRecord(uuid);
+                tmp = client.createRfcommSocketToServiceRecord(uuid);
             } catch (IOException e)
             {
                 e.printStackTrace();
             }
-            mmSocket = tmp;
+            socket = tmp;
         }
 
         public void run()
@@ -240,16 +249,22 @@ public class bWrapper
             {
                 // Connect the device through the socket. This will block
                 // until it succeeds or throws an exception
-                mmSocket.connect();
+                setState(STATE_CONNECTED);
+                Log.d(TAG, "Socket starting");
+                socket.connect();
+                Log.d(TAG, "Socket connected?");
+                connectedThread = new ConnectedThread(socket);
                 Log.d(TAG, "Socket is open!");
+                connectedThread.start();
             }
             catch (IOException connectException)
             {
                 // Unable to connect; close the socket and get out
                 try
                 {
-                    mmSocket.close();
-                } catch (IOException closeException)
+                    socket.close();
+                }
+                catch (IOException closeException)
                 {
                 }
                 return;
@@ -266,7 +281,7 @@ public class bWrapper
         {
             try
             {
-                mmSocket.close();
+                socket.close();
             }
             catch (IOException e)
             {
@@ -274,12 +289,83 @@ public class bWrapper
         }
     }
 
-    //Interface to be implemented by mirror to notify when a new message has been recieved
-    public interface bStatusListener
+    public void write(String str)
     {
-
-        //If a string is returned, it will be sent back to client
-        public void onStatusChange(int status);
+        if (state == STATE_CONNECTED && connectedThread != null)
+        {
+            Log.d(TAG, "Writing string: str");
+            connectedThread.write(str.getBytes());
+        }
     }
 
+    private class ConnectedThread extends Thread
+    {
+        private final BluetoothSocket socket;
+        private final InputStream inStream;
+        private final OutputStream outStream;
+
+        public ConnectedThread(BluetoothSocket socket)
+        {
+            this.socket = socket;
+            InputStream tmpIn = null;
+            OutputStream tmpOut = null;
+
+            // Get the input and output streams, using temp objects because
+            // member streams are final
+            try
+            {
+                tmpIn = socket.getInputStream();
+                tmpOut = socket.getOutputStream();
+            } catch (IOException e)
+            {
+            }
+
+            inStream = tmpIn;
+            outStream = tmpOut;
+        }
+
+        public void run()
+        {
+            byte[] buffer = new byte[1024];  // buffer store for the stream
+            int bytes; // bytes returned from read()
+
+            // Keep listening to the InputStream until an exception occurs
+            while (true)
+            {
+                try
+                {
+                    // Read from the InputStream
+                    bytes = inStream.read(buffer);
+                    // Send the obtained bytes to the UI activity
+                    handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer)
+                            .sendToTarget();
+                } catch (IOException e)
+                {
+                    break;
+                }
+            }
+        }
+
+        /* Call this from the main activity to send data to the remote device */
+        public void write(byte[] bytes)
+        {
+            try
+            {
+                outStream.write(bytes);
+            } catch (IOException e)
+            {
+            }
+        }
+
+        /* Call this from the main activity to shutdown the connection */
+        public void cancel()
+        {
+            try
+            {
+                socket.close();
+            } catch (IOException e)
+            {
+            }
+        }
+    }
 }

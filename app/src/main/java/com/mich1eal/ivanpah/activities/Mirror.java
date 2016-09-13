@@ -6,6 +6,8 @@ import android.graphics.Typeface;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -22,6 +24,8 @@ import java.util.TimerTask;
 public class Mirror extends Activity
     implements JSONGetter.Weather.WeatherUpdateListener
 {
+    private static final String TAG = Controller.class.getSimpleName();
+
     private static JSONGetter.Weather weather;
     private static Duolingo duolingo;
     private final static long weatherDelay = 5 * 60 * 1000;
@@ -52,10 +56,8 @@ public class Mirror extends Activity
         weather = new JSONGetter.Weather((LocationManager) getSystemService(LOCATION_SERVICE), this);
         duolingo = new Duolingo();
 
-
-
         // Set up bluetooth
-        bWrap = new bWrapper(this, true, null);
+        bWrap = new bWrapper(this, null);
 
 
         /*BluetoothAdapter bAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -186,9 +188,26 @@ public class Mirror extends Activity
         if (requestCode == 5)
         {
             Log.d("MIRROR", "Thanks for enable btooth, yo");
-            bWrap.connectDevices();
-
+            bWrap.finishServer();
         }
+
+    }
+
+
+    static class BHandler extends Handler
+    {
+        @Override
+        public void handleMessage(Message inputMessage)
+        {
+            Log.d(TAG, "Message recieved: " + inputMessage.what);
+            if (inputMessage.what == bWrapper.MESSAGE_READ)
+            {
+                byte[] bytes = (byte[]) inputMessage.obj;
+                String time = new String(bytes);
+                alarmText.setText(time);
+            }
+        }
+
 
     }
 
