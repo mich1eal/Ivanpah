@@ -3,7 +3,6 @@ package com.mich1eal.ivanpah.activities;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
@@ -11,10 +10,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
-import com.mich1eal.ivanpah.bWrapper;
+import com.mich1eal.ivanpah.BWrapper;
 import com.mich1eal.ivanpah.R;
-
-import java.lang.ref.WeakReference;
 
 /**
  * Created by Michael on 8/30/2016.
@@ -26,7 +23,7 @@ public class Controller extends Activity
     private static TextView statusText;
     private static Button retryButton, sendButton, cancelButton;
     private static TimePicker timePick;
-    private static bWrapper bWrap;
+    private static BWrapper bWrap;
 
 
     @Override
@@ -68,14 +65,14 @@ public class Controller extends Activity
             @Override
             public void onClick(View v)
             {
-                bWrap.write(bWrapper.MESSAGE_CANCEL);
+                bWrap.write(BWrapper.MESSAGE_CANCEL);
             }
 
         });
 
         //Handler is static to prevent memory leaks. See:
         // http://stackoverflow.com/questions/11278875/handlers-and-memory-leaks-in-android
-        bWrap = new bWrapper(this, new BHandler(), false);
+        bWrap = new BWrapper(this, new BHandler(), false);
     }
 
     static class BHandler extends Handler
@@ -87,23 +84,23 @@ public class Controller extends Activity
             int msg = R.string.status_error;
             switch (inputMessage.what)
             {
-                case bWrapper.STATE_SEARCHING:
+                case BWrapper.STATE_SEARCHING:
                     msg = R.string.status_searching;
                     retryButton.setEnabled(false);
                     break;
-                case bWrapper.STATE_CONNECTED:
+                case BWrapper.STATE_CONNECTED:
                     msg = R.string.status_connect;
                     retryButton.setEnabled(false);
                     break;
-                case bWrapper.STATE_NO_BLUETOOTH:
+                case BWrapper.STATE_NO_BLUETOOTH:
                     msg = R.string.status_no_bluetooth;
                     retryButton.setEnabled(true);
                     break;
-                case bWrapper.STATE_DISCONNECTED:
+                case BWrapper.STATE_DISCONNECTED:
                     msg = R.string.status_disconnect;
                     retryButton.setEnabled(true);
                     break;
-                case bWrapper.STATE_FOUND:
+                case BWrapper.STATE_FOUND:
                     msg = R.string.status_found;
                     retryButton.setEnabled(false);
                     break;

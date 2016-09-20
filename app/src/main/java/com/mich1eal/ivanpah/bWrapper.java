@@ -9,25 +9,21 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.UUID;
 
 /**
  * Created by Michael on 9/4/2016.
  */
-public class bWrapper
+public class BWrapper
 {
-    private static final String TAG = bWrapper.class.getSimpleName();
+    private static final String TAG = BWrapper.class.getSimpleName();
     private static final String SERVER_NAME = "Ivanpah Smart Mirror";
     private static final UUID uuid = UUID.fromString("d3cb33f4-094f-4b55-b23e-e5d771ab2f92");
 
@@ -58,7 +54,7 @@ public class bWrapper
     private ConnectedThread connectedThread;
 
 
-    public bWrapper(Context context, Handler handler, boolean isServer)
+    public BWrapper(Context context, Handler handler, boolean isServer)
     {
         assert(context != null);
 

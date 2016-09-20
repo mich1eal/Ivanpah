@@ -12,7 +12,7 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.mich1eal.ivanpah.bWrapper;
+import com.mich1eal.ivanpah.BWrapper;
 import com.mich1eal.ivanpah.Duolingo;
 import com.mich1eal.ivanpah.JSONGetter;
 import com.mich1eal.ivanpah.R;
@@ -32,7 +32,7 @@ public class Mirror extends Activity
     private static TextView temp, max, min, icon,precipType, precipPercent, alarmIcon, alarmText;
     private static LinearLayout precipTile;
     private static Typeface weatherFont, iconFont, defaultFont;
-    private static bWrapper bWrap;
+    private static BWrapper bWrap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -56,7 +56,7 @@ public class Mirror extends Activity
         duolingo = new Duolingo();
 
         // Set up bluetooth
-        bWrap = new bWrapper(this, new BHandler(), true);
+        bWrap = new BWrapper(this, new BHandler(), true);
 
         // Initialize fonts
         defaultFont = icon.getTypeface();
@@ -162,7 +162,7 @@ public class Mirror extends Activity
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
         Log.d("MIRROR", "onActivityResult");
-        if (requestCode == bWrapper.BLUETOOTH_RESPONSE && resultCode == bWrapper.BLUETOOTH_OK)
+        if (requestCode == BWrapper.BLUETOOTH_RESPONSE && resultCode == BWrapper.BLUETOOTH_OK)
         {
             Log.d("MIRROR", "Thanks for enable btooth, yo");
             bWrap.onServerInit();
@@ -182,10 +182,10 @@ public class Mirror extends Activity
         public void handleMessage(Message inputMessage)
         {
             Log.d(TAG, "Message recieved: " + inputMessage.what);
-            if (inputMessage.what == bWrapper.MESSAGE_READ)
+            if (inputMessage.what == BWrapper.MESSAGE_READ)
             {
                 String time = (String) inputMessage.obj;
-                if (time.equals(bWrapper.MESSAGE_CANCEL))
+                if (time.equals(BWrapper.MESSAGE_CANCEL))
                 {
                     alarmText.setVisibility(View.GONE);
                     alarmIcon.setVisibility(View.GONE);
