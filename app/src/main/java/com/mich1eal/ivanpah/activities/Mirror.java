@@ -6,7 +6,6 @@ import android.graphics.Typeface;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
@@ -57,26 +56,7 @@ public class Mirror extends Activity
         duolingo = new Duolingo();
 
         // Set up bluetooth
-        bWrap = new bWrapper(this, null);
-
-
-        /*BluetoothAdapter bAdapter = BluetoothAdapter.getDefaultAdapter();
-        if (bAdapter == null)//If device has bluetooth
-        {
-            Toast.makeText(this,
-                    getResources().getString(R.string.no_bluetooth),
-                    Toast.LENGTH_LONG).show();
-        }
-        else //Else device has bluetooth
-        {
-            // Set name of device to app name
-            bAdapter.setName(getResources().getString(R.string.bluetooth_name));
-
-            // Make device always discoverable
-            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-            enableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
-            startActivity(enableIntent); //Automatically asks for permission
-        }*/
+        bWrap = new bWrapper(this, new BHandler(), true);
 
         // Initialize fonts
         defaultFont = icon.getTypeface();
@@ -182,17 +162,19 @@ public class Mirror extends Activity
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
         Log.d("MIRROR", "onActivityResult");
-        Log.d("MIRROR", "resultCode = " + resultCode);
-        Log.d("MIRROR", "requestCode = " + requestCode);
-        Log.d("MIRROR", "result ok = " + RESULT_OK);
-        if (requestCode == 5)
+        if (requestCode == bWrapper.BLUETOOTH_RESPONSE && resultCode == bWrapper.BLUETOOTH_OK)
         {
             Log.d("MIRROR", "Thanks for enable btooth, yo");
-            bWrap.finishServer();
+            bWrap.onServerInit();
         }
-
     }
 
+    @Override
+    public void onDestroy()
+    {
+        bWrap.close();
+        super.onDestroy();
+    }
 
     static class BHandler extends Handler
     {
@@ -202,14 +184,19 @@ public class Mirror extends Activity
             Log.d(TAG, "Message recieved: " + inputMessage.what);
             if (inputMessage.what == bWrapper.MESSAGE_READ)
             {
-                byte[] bytes = (byte[]) inputMessage.obj;
-                String time = new String(bytes);
-                alarmText.setText(time);
+                String time = (String) inputMessage.obj;
+                if (time.equals(bWrapper.MESSAGE_CANCEL))
+                {
+                    alarmText.setVisibility(View.GONE);
+                    alarmIcon.setVisibility(View.GONE);
+                }
+                else
+                {
+                    alarmText.setText(time);
+                    alarmText.setVisibility(View.VISIBLE);
+                    alarmIcon.setVisibility(View.VISIBLE);
+                }
             }
         }
-
-
     }
-
-
 }

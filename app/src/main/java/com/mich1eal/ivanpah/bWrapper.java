@@ -14,6 +14,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,79 +33,124 @@ public class bWrapper
 
 
     public static final int MESSAGE_READ = 99;
+    public static final String MESSAGE_CANCEL = "cancel";
+
     public static final int STATE_CONNECTED = 2;
     public static final int STATE_SEARCHING = 3;
-    public static final int STATE_NOT_FOUND = 4;
+    public static final int STATE_DISCONNECTED = 4;
     public static final int STATE_NO_BLUETOOTH = 5;
     public static final int STATE_FOUND = 6;
 
-    public static final int STATE_ERROR = -1;
+    public static final int BLUETOOTH_RESPONSE = 5999;
+    public static final int BLUETOOTH_OK = 1;
+
+    ConnectedThread conThread;
+    SearchThread searchThread;
+
 
     private int state;
     private Context context;
     private BluetoothAdapter bAdapter;
     private boolean serverFound = false;
     private Handler handler;
+    private final boolean isServer;
 
     private ConnectedThread connectedThread;
 
 
-    public bWrapper(Context context, Handler handler)
+    public bWrapper(Context context, Handler handler, boolean isServer)
     {
         assert(context != null);
 
         this.context = context;
         this.handler = handler;
+        this.isServer = isServer;
 
         bAdapter = BluetoothAdapter.getDefaultAdapter();
+        if (!hasBluetooth()) setState(STATE_NO_BLUETOOTH);
+
+        if (isServer) initServer();
+    }
+
+    public void connect()
+    {
+        setState(STATE_SEARCHING);
     }
 
     private void setState(int state)
     {
-        //Update state and notify handler
-        this.state = state;
+        final int oldState = this.state;
+        final int newState = state;
+        this.state = newState;
+
+        Log.d(TAG, "setState: " + newState);
+
+        //Notify handler
         if (handler != null)
         {
-            handler.sendEmptyMessage(state);
+            handler.sendEmptyMessage(newState);
         }
+
+        // If no bluetooth, don't start searching
+        if (newState == STATE_SEARCHING && !hasBluetooth())
+        {
+            setState(STATE_NO_BLUETOOTH);
+            return;
+        }
+
+        if (isServer) // Server only actions
+        {
+            if (newState == STATE_DISCONNECTED)
+            {
+                if (connectedThread != null) connectedThread.cancel();
+                if (searchThread != null) searchThread.cancel();
+
+                setState(STATE_SEARCHING);
+
+                return;
+            }
+
+            if (newState == STATE_SEARCHING) startServer();
+        }
+        else // Client only actions
+        {
+            if (newState == STATE_DISCONNECTED)
+            {
+                if (connectedThread != null) connectedThread.cancel();
+                if (searchThread != null) searchThread.cancel();
+            }
+            else if (newState == STATE_SEARCHING) startClient();
+        }
+        // Universal actions
     }
 
     private boolean hasBluetooth()
     {
-        if (bAdapter == null || !bAdapter.isEnabled())//If device doesn't have bluetooth
-        {
-            setState(STATE_NO_BLUETOOTH);
-            return false;
-        }
-        return true;
+        return (bAdapter != null && bAdapter.isEnabled());
     }
 
-    public void startServer()
+   private void initServer()
     {
-        //If no bluetooth, exit.
-        if (!hasBluetooth()) return;
-
         bAdapter.setName(SERVER_NAME);
         Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
         enableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
-        ((Activity) context).startActivityForResult(enableIntent, 5);
+        ((Activity) context).startActivityForResult(enableIntent, BLUETOOTH_RESPONSE);
     }
 
     //This method needs to be called by the host activity after getting the activity result back
-    // from startSever(). This is a terrible implementation and should be fixed
-    public void finishServer()
+    // from initServer(). This is a terrible implementation and should be fixed
+    public void onServerInit()
+    {
+        setState(STATE_SEARCHING);
+    }
+
+    private void startServer()
     {
         new ServerThread().start();
     }
 
-    public void startClient()
+    private void startClient()
     {
-        //If no bluetooth, exit.
-        if (!hasBluetooth()) return;
-
-        if(state == STATE_CONNECTED) return;
-        setState(STATE_SEARCHING);
-
         // First check for already established pairings
         ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
         pairedDevices.addAll(bAdapter.getBondedDevices());
@@ -141,7 +188,7 @@ public class bWrapper
                         && state != STATE_FOUND
                         && state != STATE_CONNECTED)
                 {
-                    setState(STATE_NOT_FOUND);
+                    setState(STATE_DISCONNECTED);
                 }
             }
         };
@@ -156,8 +203,26 @@ public class bWrapper
         //Log.d(TAG, "No servers found");
     }
 
+    public void close()
+    {
+        Log.d(TAG, "Closing connections");
+        setState(STATE_DISCONNECTED);
+    }
+
+
+
+
+
+    abstract class SearchThread
+        extends Thread
+    {
+        abstract public void run();
+        abstract public void cancel();
+    }
+
+
     public class ServerThread
-            extends Thread
+            extends SearchThread
     {
         private final BluetoothServerSocket serverSocket;
 
@@ -172,7 +237,7 @@ public class bWrapper
             }
             catch (IOException e)
             {
-                Log.e(TAG, e.getMessage());
+                e.printStackTrace();
             }
             serverSocket = tmp;
         }
@@ -195,27 +260,37 @@ public class bWrapper
                 // If a connection was accepted
                 if (socket != null)
                 {
+                    Log.d(TAG, "Socket not null");
                     // Do work to manage the connection (in a separate thread)
-                    //manageConnectedSocket(socket);
-                    setState(STATE_CONNECTED);
-                    connectedThread = new ConnectedThread(socket);
-                    connectedThread.start();
-                    Log.d(TAG, "Socket is open!");
-                    //serverSocket.close();
+
+                    try
+                    {
+                        connectedThread = new ConnectedThread(socket);
+                        connectedThread.start();
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                        setState(STATE_DISCONNECTED);
+                    }
                     break;
                 }
             }
         }
 
         /** Will cancel the listening socket, and cause the thread to finish */
-        public void cancel() {
-            try {
+        public void cancel()
+        {
+            try
+            {
                 serverSocket.close();
-            } catch (IOException e) { }
+            }
+            catch (IOException e){e.printStackTrace();}
         }
     }
 
-    private class ClientThread extends Thread
+    private class ClientThread
+            extends SearchThread
     {
         private final BluetoothSocket socket;
         private final BluetoothDevice client;
@@ -249,7 +324,6 @@ public class bWrapper
             {
                 // Connect the device through the socket. This will block
                 // until it succeeds or throws an exception
-                setState(STATE_CONNECTED);
                 Log.d(TAG, "Socket starting");
                 socket.connect();
                 Log.d(TAG, "Socket connected?");
@@ -257,21 +331,11 @@ public class bWrapper
                 Log.d(TAG, "Socket is open!");
                 connectedThread.start();
             }
-            catch (IOException connectException)
+            catch (Exception e)
             {
-                // Unable to connect; close the socket and get out
-                try
-                {
-                    socket.close();
-                }
-                catch (IOException closeException)
-                {
-                }
-                return;
+                e.printStackTrace();
+                setState(STATE_DISCONNECTED);
             }
-
-            // Do work to manage the connection (in a separate thread)
-            // manageConnectedSocket(mmSocket);
         }
 
         /**
@@ -283,9 +347,8 @@ public class bWrapper
             {
                 socket.close();
             }
-            catch (IOException e)
-            {
-            }
+            catch (Exception e){e.printStackTrace();}
+            finally {searchThread = null;}
         }
     }
 
@@ -293,29 +356,30 @@ public class bWrapper
     {
         if (state == STATE_CONNECTED && connectedThread != null)
         {
-            Log.d(TAG, "Writing string: str");
-            connectedThread.write(str.getBytes());
+            Log.d(TAG, "Writing string: " + str);
+            connectedThread.write(str);
         }
     }
 
-    private class ConnectedThread extends Thread
+    private class ConnectedThread
+            extends Thread
     {
         private final BluetoothSocket socket;
-        private final InputStream inStream;
-        private final OutputStream outStream;
+        private final DataInputStream inStream;
+        private final DataOutputStream outStream;
 
         public ConnectedThread(BluetoothSocket socket)
         {
             this.socket = socket;
-            InputStream tmpIn = null;
-            OutputStream tmpOut = null;
+            DataInputStream tmpIn = null;
+            DataOutputStream tmpOut = null;
 
             // Get the input and output streams, using temp objects because
             // member streams are final
             try
             {
-                tmpIn = socket.getInputStream();
-                tmpOut = socket.getOutputStream();
+                tmpIn = new DataInputStream(socket.getInputStream());
+                tmpOut = new DataOutputStream(socket.getOutputStream());
             } catch (IOException e)
             {
             }
@@ -326,20 +390,23 @@ public class bWrapper
 
         public void run()
         {
-            byte[] buffer = new byte[1024];  // buffer store for the stream
-            int bytes; // bytes returned from read()
+            Log.d(TAG, "ConnectedThread running!");
+            setState(STATE_CONNECTED);
 
             // Keep listening to the InputStream until an exception occurs
             while (true)
             {
+                if (!socket.isConnected()) setState(STATE_DISCONNECTED);
                 try
                 {
                     // Read from the InputStream
-                    bytes = inStream.read(buffer);
+                    String msg = inStream.readUTF();
+                    Log.d(TAG, "Read something: " + msg);
                     // Send the obtained bytes to the UI activity
-                    handler.obtainMessage(MESSAGE_READ, bytes, -1, buffer)
+                    handler.obtainMessage(MESSAGE_READ, msg)
                             .sendToTarget();
-                } catch (IOException e)
+                }
+                catch (IOException e)
                 {
                     break;
                 }
@@ -347,12 +414,13 @@ public class bWrapper
         }
 
         /* Call this from the main activity to send data to the remote device */
-        public void write(byte[] bytes)
+        public void write(String msg)
         {
             try
             {
-                outStream.write(bytes);
-            } catch (IOException e)
+                outStream.writeUTF(msg);
+            }
+            catch (IOException e)
             {
             }
         }
@@ -362,10 +430,11 @@ public class bWrapper
         {
             try
             {
+                outStream.close();
+                inStream.close();
                 socket.close();
-            } catch (IOException e)
-            {
-            }
+            } catch (IOException e) {e.printStackTrace();}
+            finally{connectedThread = null;}
         }
     }
 }

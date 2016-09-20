@@ -24,7 +24,7 @@ public class Controller extends Activity
     private static final String TAG = Controller.class.getSimpleName();
 
     private static TextView statusText;
-    private static Button retryButton, sendButton;
+    private static Button retryButton, sendButton, cancelButton;
     private static TimePicker timePick;
     private static bWrapper bWrap;
 
@@ -38,13 +38,14 @@ public class Controller extends Activity
         retryButton = (Button) findViewById(R.id.control_retry);
         sendButton = (Button) findViewById(R.id.control_send);
         timePick = (TimePicker) findViewById(R.id.control_time_pick);
+        cancelButton = (Button) findViewById(R.id.control_cancel);
 
         retryButton.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View v)
             {
-                bWrap.startClient();
+                bWrap.connect();
             }
         });
 
@@ -58,14 +59,23 @@ public class Controller extends Activity
                         .append(':')
                         .append(timePick.getCurrentMinute())
                         .toString();
-                Log.d(TAG, "Trying to send the string: " + msg);
                 bWrap.write(msg);
             }
         });
 
+        cancelButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                bWrap.write(bWrapper.MESSAGE_CANCEL);
+            }
+
+        });
+
         //Handler is static to prevent memory leaks. See:
         // http://stackoverflow.com/questions/11278875/handlers-and-memory-leaks-in-android
-        bWrap = new bWrapper(this, new BHandler());
+        bWrap = new bWrapper(this, new BHandler(), false);
     }
 
     static class BHandler extends Handler
@@ -74,35 +84,42 @@ public class Controller extends Activity
         public void handleMessage(Message inputMessage)
         {
             Log.d(TAG, "Message recieved: " + inputMessage.what);
+            int msg = R.string.status_error;
             switch (inputMessage.what)
             {
                 case bWrapper.STATE_SEARCHING:
-                    statusText.setText(R.string.status_searching);
+                    msg = R.string.status_searching;
                     retryButton.setEnabled(false);
                     break;
                 case bWrapper.STATE_CONNECTED:
-                    statusText.setText(R.string.status_connect);
+                    msg = R.string.status_connect;
                     retryButton.setEnabled(false);
                     break;
                 case bWrapper.STATE_NO_BLUETOOTH:
-                    statusText.setText(R.string.status_no_bluetooth);
+                    msg = R.string.status_no_bluetooth;
                     retryButton.setEnabled(true);
                     break;
-                case bWrapper.STATE_NOT_FOUND:
-                    statusText.setText(R.string.status_not_found);
+                case bWrapper.STATE_DISCONNECTED:
+                    msg = R.string.status_disconnect;
                     retryButton.setEnabled(true);
                     break;
                 case bWrapper.STATE_FOUND:
-                    statusText.setText(R.string.status_found);
+                    msg = R.string.status_found;
                     retryButton.setEnabled(false);
                     break;
                 default:
-                    statusText.setText(R.string.status_error);
+                    msg = R.string.status_error;
                     retryButton.setEnabled(true);
             }
+            statusText.setText(msg);
         }
+    }
 
-
+    @Override
+    public void onDestroy()
+    {
+        bWrap.close();
+        super.onDestroy();
     }
 
 }
