@@ -93,31 +93,19 @@ public class BWrapper
             setState(STATE_NO_BLUETOOTH);
             return;
         }
-
-        if (isServer) // Server only actions
+        else if (newState == STATE_DISCONNECTED)
         {
-            if (newState == STATE_DISCONNECTED)
-            {
-                if (connectedThread != null) connectedThread.cancel();
-                if (searchThread != null) searchThread.cancel();
+            if (connectedThread != null) connectedThread.cancel();
+            if (searchThread != null) searchThread.cancel();
 
-                setState(STATE_SEARCHING);
-
-                return;
-            }
-
-            if (newState == STATE_SEARCHING) startServer();
+            // Server automatically starts searching again
+            if (isServer) setState(STATE_SEARCHING);
         }
-        else // Client only actions
+        else if (newState == STATE_SEARCHING)
         {
-            if (newState == STATE_DISCONNECTED)
-            {
-                if (connectedThread != null) connectedThread.cancel();
-                if (searchThread != null) searchThread.cancel();
-            }
-            else if (newState == STATE_SEARCHING) startClient();
+            if (isServer) startServer();
+            else startClient();
         }
-        // Universal actions
     }
 
     private boolean hasBluetooth()
@@ -142,7 +130,8 @@ public class BWrapper
 
     private void startServer()
     {
-        new ServerThread().start();
+        searchThread = new ServerThread();
+        searchThread.start();
     }
 
     private void startClient()
@@ -174,10 +163,11 @@ public class BWrapper
                 if (action.equals(BluetoothDevice.ACTION_FOUND)) //device found
                 {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    Log.d(TAG, "Device found: " + device.toString());
-                    if (device.getName().equals(SERVER_NAME))
+                    if (device != null) Log.d(TAG, "Device found: " + device.toString());
+                    if (device != null && device.getName().equals(SERVER_NAME))
                     {
-                        new ClientThread(device).start();
+                        searchThread = new ClientThread(device);
+                        searchThread.start();
                     }
                 }
                 else if (action.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
@@ -205,10 +195,7 @@ public class BWrapper
         setState(STATE_DISCONNECTED);
     }
 
-
-
-
-
+    // Wraper to hold ServerThread and ClientThread
     abstract class SearchThread
         extends Thread
     {
@@ -320,11 +307,8 @@ public class BWrapper
             {
                 // Connect the device through the socket. This will block
                 // until it succeeds or throws an exception
-                Log.d(TAG, "Socket starting");
                 socket.connect();
-                Log.d(TAG, "Socket connected?");
                 connectedThread = new ConnectedThread(socket);
-                Log.d(TAG, "Socket is open!");
                 connectedThread.start();
             }
             catch (Exception e)
@@ -376,8 +360,10 @@ public class BWrapper
             {
                 tmpIn = new DataInputStream(socket.getInputStream());
                 tmpOut = new DataOutputStream(socket.getOutputStream());
-            } catch (IOException e)
+            }
+            catch (IOException e)
             {
+                e.printStackTrace();
             }
 
             inStream = tmpIn;
@@ -404,7 +390,8 @@ public class BWrapper
                 }
                 catch (IOException e)
                 {
-                    break;
+                    setState(STATE_DISCONNECTED);
+                    break; // get out of loop
                 }
             }
         }

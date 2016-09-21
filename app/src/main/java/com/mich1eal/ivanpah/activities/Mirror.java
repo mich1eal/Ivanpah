@@ -181,7 +181,6 @@ public class Mirror extends Activity
         @Override
         public void handleMessage(Message inputMessage)
         {
-            Log.d(TAG, "Message recieved: " + inputMessage.what);
             if (inputMessage.what == BWrapper.MESSAGE_READ)
             {
                 String time = (String) inputMessage.obj;
