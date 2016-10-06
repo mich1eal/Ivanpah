@@ -1,6 +1,8 @@
 package com.mich1eal.ivanpah.activities;
 
 import android.app.Activity;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.location.LocationManager;
@@ -15,8 +17,11 @@ import android.widget.TextView;
 import com.mich1eal.ivanpah.BWrapper;
 import com.mich1eal.ivanpah.Duolingo;
 import com.mich1eal.ivanpah.JSONGetter;
+import com.mich1eal.ivanpah.MirrorAlarm;
 import com.mich1eal.ivanpah.R;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -33,6 +38,25 @@ public class Mirror extends Activity
     private static LinearLayout precipTile;
     private static Typeface weatherFont, iconFont, defaultFont;
     private static BWrapper bWrap;
+    private static Mirror inst;
+
+    private static MirrorAlarm alarm;
+
+    private PendingIntent pendingIntent;
+    private AlarmManager alarmManager;
+
+
+    //Format for alarm
+    private static final SimpleDateFormat alarmFormat = new SimpleDateFormat("h:mm a");
+
+
+    @Override
+    public void onStart()
+    {
+        super.onStart();
+        inst = this;
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -57,6 +81,7 @@ public class Mirror extends Activity
 
         // Set up bluetooth
         bWrap = new BWrapper(this, new BHandler(), true);
+        bWrap.setAutoReconnect(true);
 
         // Initialize fonts
         defaultFont = icon.getTypeface();
@@ -66,6 +91,36 @@ public class Mirror extends Activity
         // Initialize constant fonts
         precipType.setTypeface(weatherFont);
         alarmIcon.setTypeface(iconFont);
+
+        // Initialize MirrorAlarm
+        alarm = new MirrorAlarm(this);
+        alarm.setAlarmListener(new MirrorAlarm.AlarmListener()
+        {
+            @Override
+            public void onAlarmSet(Date time)
+            {
+                // Set UI
+                alarmText.setText(alarmFormat.format(time));
+                alarmText.setVisibility(View.VISIBLE);
+                alarmIcon.setVisibility(View.VISIBLE);
+
+            }
+
+            @Override
+            public void onCancel()
+            {
+                alarmText.setVisibility(View.GONE);
+                alarmIcon.setVisibility(View.GONE);
+
+            }
+
+            @Override
+            public void onRing()
+            {
+
+            }
+        });
+
 
         // Set up timer for recurring tasks
         TimerTask updater = getUpdater(new Handler());
@@ -176,6 +231,12 @@ public class Mirror extends Activity
         super.onDestroy();
     }
 
+    public static Mirror getInstance()
+    {
+        return inst;
+    }
+
+
     static class BHandler extends Handler
     {
         @Override
@@ -184,17 +245,9 @@ public class Mirror extends Activity
             if (inputMessage.what == BWrapper.MESSAGE_READ)
             {
                 String time = (String) inputMessage.obj;
-                if (time.equals(BWrapper.MESSAGE_CANCEL))
-                {
-                    alarmText.setVisibility(View.GONE);
-                    alarmIcon.setVisibility(View.GONE);
-                }
-                else
-                {
-                    alarmText.setText(time);
-                    alarmText.setVisibility(View.VISIBLE);
-                    alarmIcon.setVisibility(View.VISIBLE);
-                }
+                // Message will either be a message to cancel, a long indicating when to set the alarm
+                if (time.equals(BWrapper.MESSAGE_CANCEL)) alarm.cancel();
+                else alarm.setAlarm(new Date(Long.parseLong(time)));
             }
         }
     }

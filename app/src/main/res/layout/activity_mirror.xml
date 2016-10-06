@@ -17,6 +17,7 @@
             android:layout_height="wrap_content"
             android:id="@+id/alarmIcon"
             android:text="@string/alarm_icon"
+            android:visibility="gone"
             android:textColor="#FFF04C"
             android:textSize="60dp"
             />
@@ -25,6 +26,7 @@
             android:layout_height="wrap_content"
             android:id="@+id/alarmText"
             android:text="@string/alarm_test"
+            android:visibility="gone"
             android:textColor="#FFF04C"
             android:textSize="60dp"/>
 

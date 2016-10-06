@@ -40,6 +40,8 @@ public class BWrapper
     public static final int BLUETOOTH_RESPONSE = 5999;
     public static final int BLUETOOTH_OK = 1;
 
+    private static boolean autoReconnect = false;
+
     ConnectedThread conThread;
     SearchThread searchThread;
 
@@ -53,7 +55,6 @@ public class BWrapper
 
     private ConnectedThread connectedThread;
 
-
     public BWrapper(Context context, Handler handler, boolean isServer)
     {
         assert(context != null);
@@ -66,6 +67,7 @@ public class BWrapper
         if (!hasBluetooth()) setState(STATE_NO_BLUETOOTH);
 
         if (isServer) initServer();
+        else connect();
     }
 
     public void connect()
@@ -75,7 +77,6 @@ public class BWrapper
 
     private void setState(int state)
     {
-        final int oldState = this.state;
         final int newState = state;
         this.state = newState;
 
@@ -99,7 +100,7 @@ public class BWrapper
             if (searchThread != null) searchThread.cancel();
 
             // Server automatically starts searching again
-            if (isServer) setState(STATE_SEARCHING);
+            if (autoReconnect) setState(STATE_SEARCHING);
         }
         else if (newState == STATE_SEARCHING)
         {
@@ -108,12 +109,14 @@ public class BWrapper
         }
     }
 
+    public void setAutoReconnect(boolean autoReconnect){this.autoReconnect = autoReconnect;}
+
     private boolean hasBluetooth()
     {
         return (bAdapter != null && bAdapter.isEnabled());
     }
 
-   private void initServer()
+    private void initServer()
     {
         bAdapter.setName(SERVER_NAME);
         Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
@@ -202,7 +205,6 @@ public class BWrapper
         abstract public void run();
         abstract public void cancel();
     }
-
 
     public class ServerThread
             extends SearchThread

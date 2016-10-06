@@ -13,6 +13,8 @@ import android.widget.TimePicker;
 import com.mich1eal.ivanpah.BWrapper;
 import com.mich1eal.ivanpah.R;
 
+import java.util.Calendar;
+
 /**
  * Created by Michael on 8/30/2016.
  */
@@ -51,12 +53,14 @@ public class Controller extends Activity
             @Override
             public void onClick(View v)
             {
-                String msg = new StringBuilder()
-                        .append(timePick.getCurrentHour())
-                        .append(':')
-                        .append(timePick.getCurrentMinute())
-                        .toString();
-                bWrap.write(msg);
+
+                Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.HOUR_OF_DAY, timePick.getCurrentHour());
+                cal.set(Calendar.MINUTE, timePick.getCurrentMinute());
+                cal.set(Calendar.SECOND, 0);
+
+                //Probably a better way to do this
+                bWrap.write(String.valueOf(cal.getTimeInMillis()));
             }
         });
 
