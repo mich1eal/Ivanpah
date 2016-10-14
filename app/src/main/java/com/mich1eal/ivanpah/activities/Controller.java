@@ -23,9 +23,12 @@ public class Controller extends Activity
     private static final String TAG = Controller.class.getSimpleName();
 
     private static TextView statusText;
-    private static Button retryButton, sendButton, cancelButton;
+    private static Button retryButton, sendButton, cancelButton, duoButton;
     private static TimePicker timePick;
     private static BWrapper bWrap;
+    private boolean duoMode = false;
+    private long lastTime;
+    private long heartbeatDelay = 3 * 1000;
 
 
     @Override
@@ -38,6 +41,7 @@ public class Controller extends Activity
         sendButton = (Button) findViewById(R.id.control_send);
         timePick = (TimePicker) findViewById(R.id.control_time_pick);
         cancelButton = (Button) findViewById(R.id.control_cancel);
+        duoButton = (Button) findViewById(R.id.control_duo);
 
         retryButton.setOnClickListener(new View.OnClickListener()
         {
@@ -73,6 +77,19 @@ public class Controller extends Activity
             }
 
         });
+
+        duoButton.setOnClickListener(new View.OnClickListener()
+        {
+            @Override
+            public void onClick(View v)
+            {
+                //Toggle duo mode
+                duoMode = !duoMode;
+                duoButton.setText(duoMode ? "Launch Duolingo" : "Cancel Duolingo");
+            }
+        });
+
+
 
         //Handler is static to prevent memory leaks. See:
         // http://stackoverflow.com/questions/11278875/handlers-and-memory-leaks-in-android
@@ -121,6 +138,17 @@ public class Controller extends Activity
     {
         bWrap.close();
         super.onDestroy();
+    }
+
+    @Override
+    public void onUserInteraction()
+    {
+        final long now = System.currentTimeMillis();
+        if (duoMode && now - lastTime > heartbeatDelay)
+        {
+            bWrap.write("heartbeat");
+            lastTime = now;
+        }
     }
 
 }

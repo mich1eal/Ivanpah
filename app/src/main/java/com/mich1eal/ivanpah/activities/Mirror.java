@@ -1,8 +1,6 @@
 package com.mich1eal.ivanpah.activities;
 
 import android.app.Activity;
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.location.LocationManager;
@@ -16,47 +14,41 @@ import android.widget.TextView;
 
 import com.mich1eal.ivanpah.BWrapper;
 import com.mich1eal.ivanpah.Duolingo;
-import com.mich1eal.ivanpah.JSONGetter;
 import com.mich1eal.ivanpah.MirrorAlarm;
 import com.mich1eal.ivanpah.R;
+import com.mich1eal.ivanpah.Weather;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Timer;
+import java.util.Calendar;
 import java.util.TimerTask;
 
 public class Mirror extends Activity
-    implements JSONGetter.Weather.WeatherUpdateListener
+    implements Weather.WeatherUpdateListener
 {
     private static final String TAG = Controller.class.getSimpleName();
 
-    private static JSONGetter.Weather weather;
+    private static Weather weather;
     private static Duolingo duolingo;
-    private final static long weatherDelay = 5 * 60 * 1000;
+    private final static long weatherDelay = 5 * 60 * 1000; //Time between weather updates in millis
+    private final static long duoDelay = 5 * 1000; // Time between duo updates in millis
     private final static double minRainDisplay = .1; //Minimum threshold for displaying rain prob
     private static TextView temp, max, min, icon,precipType, precipPercent, alarmIcon, alarmText;
     private static LinearLayout precipTile;
     private static Typeface weatherFont, iconFont, defaultFont;
     private static BWrapper bWrap;
-    private static Mirror inst;
 
     private static MirrorAlarm alarm;
 
-    private PendingIntent pendingIntent;
-    private AlarmManager alarmManager;
-
+    private static boolean duoMode = false;
 
     //Format for alarm
     private static final SimpleDateFormat alarmFormat = new SimpleDateFormat("h:mm a");
-
 
     @Override
     public void onStart()
     {
         super.onStart();
-        inst = this;
     }
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -76,8 +68,17 @@ public class Mirror extends Activity
         alarmText = (TextView) findViewById(R.id.alarmText);
 
         // Initialize data fetchers
-        weather = new JSONGetter.Weather((LocationManager) getSystemService(LOCATION_SERVICE), this);
+        weather = new Weather((LocationManager) getSystemService(LOCATION_SERVICE), this);
         duolingo = new Duolingo();
+        duolingo.setOnStreakListener(new Duolingo.OnNewStreakListener()
+        {
+            // Once a new duolingo streak is achieved, the duolingo phase ends
+            @Override
+            public void onNewStreak()
+            {
+                endDuolingo();
+            }
+        });
 
         // Set up bluetooth
         bWrap = new BWrapper(this, new BHandler(), true);
@@ -97,13 +98,12 @@ public class Mirror extends Activity
         alarm.setAlarmListener(new MirrorAlarm.AlarmListener()
         {
             @Override
-            public void onAlarmSet(Date time)
+            public void onAlarmSet(Calendar time)
             {
                 // Set UI
-                alarmText.setText(alarmFormat.format(time));
+                alarmText.setText(alarmFormat.format(time.getTime()));
                 alarmText.setVisibility(View.VISIBLE);
                 alarmIcon.setVisibility(View.VISIBLE);
-
             }
 
             @Override
@@ -111,41 +111,17 @@ public class Mirror extends Activity
             {
                 alarmText.setVisibility(View.GONE);
                 alarmIcon.setVisibility(View.GONE);
-
             }
 
             @Override
             public void onRing()
             {
-
+                startDuolingo();
             }
+
         });
 
-
-        // Set up timer for recurring tasks
-        TimerTask updater = getUpdater(new Handler());
-        Timer timer = new Timer();
-        timer.schedule(updater, 0, weatherDelay);
-    }
-
-    public TimerTask getUpdater(final Handler handler)
-    {
-        return new TimerTask()
-        {
-            @Override
-            public void run()
-            {
-                handler.post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        weather.getNewData();
-                        duolingo.getStatus();
-                    }
-                });
-            }
-        };
+        weather.setAutoUpdate(new Handler(), weatherDelay);
     }
 
     @Override
@@ -202,15 +178,40 @@ public class Mirror extends Activity
         else precipTile.setVisibility(View.GONE);
     }
 
+    private static void startDuolingo()
+    {
+        if (duoMode == false) duolingo.setAutoUpdate(new Handler(), duoDelay);
+        duoMode = true;
+    }
+
+    private static void endDuolingo()
+    {
+        duolingo.cancelAutoUpdate();
+        alarm.cancel();
+        duoMode = false;
+    }
+
+    // put off alarm by another 30 seconds
+    private static void recieveHeartbeat()
+    {
+        Log.d(TAG, "heartbeat");
+        if (duoMode)
+        {
+            Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.MINUTE, 2);
+            alarm.setAlarm(cal);
+        }
+    }
+
     private void setImmersive()
     {
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    | View.SYSTEM_UI_FLAG_FULLSCREEN
-                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
 
     @Override
@@ -231,11 +232,25 @@ public class Mirror extends Activity
         super.onDestroy();
     }
 
-    public static Mirror getInstance()
-    {
-        return inst;
-    }
 
+    public TimerTask snoozeTimer(final Handler handler)
+    {
+        return new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                handler.post(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        alarm.ring();
+                    }
+                });
+            }
+        };
+    }
 
     static class BHandler extends Handler
     {
@@ -245,9 +260,16 @@ public class Mirror extends Activity
             if (inputMessage.what == BWrapper.MESSAGE_READ)
             {
                 String time = (String) inputMessage.obj;
+                Log.d(TAG, "Recieved string: " + time);
                 // Message will either be a message to cancel, a long indicating when to set the alarm
                 if (time.equals(BWrapper.MESSAGE_CANCEL)) alarm.cancel();
-                else alarm.setAlarm(new Date(Long.parseLong(time)));
+                else if (time.equals("heartbeat")) recieveHeartbeat();
+                else
+                {
+                    final Calendar cal = Calendar.getInstance();
+                    cal.setTimeInMillis(Long.parseLong(time));
+                    alarm.setAlarm(cal);
+                }
             }
         }
     }

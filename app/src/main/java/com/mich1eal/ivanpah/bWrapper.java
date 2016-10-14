@@ -341,6 +341,7 @@ public class BWrapper
             Log.d(TAG, "Writing string: " + str);
             connectedThread.write(str);
         }
+        else Log.d(TAG, "Cannot write string: " + str);
     }
 
     private class ConnectedThread

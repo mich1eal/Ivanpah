@@ -1,14 +1,13 @@
 package com.mich1eal.ivanpah;
 
 import android.content.Context;
-import android.media.Ringtone;
+import android.media.MediaPlayer;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
 
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -21,10 +20,7 @@ public class MirrorAlarm
     private Context context;
     private AlarmListener listener;
     private Timer timer;
-    private static Ringtone ringtone;
-
-    // requires context
-    private MirrorAlarm(){};
+    private static MediaPlayer mediaPlayer;
 
     public MirrorAlarm(Context context)
     {
@@ -34,8 +30,8 @@ public class MirrorAlarm
         {
             alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         }
-        ringtone = RingtoneManager.getRingtone(context, alarmUri);
-        if (ringtone == null) throw new AssertionError("Ringtone is null!");
+        mediaPlayer = MediaPlayer.create(context.getApplicationContext(), alarmUri);
+        mediaPlayer.setLooping(true);
     }
 
     public void setAlarmListener(AlarmListener listener)
@@ -43,45 +39,58 @@ public class MirrorAlarm
         this.listener = listener;
     }
 
-    public void setAlarm(Date alarmTime)
+    // Sets alarm to ring at the given calendar date. Overwrites any alarms currently in progress
+    public void setAlarm(Calendar alarmTime)
     {
-        Log.d(TAG, "Before: date = " + alarmTime.toString());
-        Date now = new Date(System.currentTimeMillis());
-        alarmTime.setDate(now.getDate());
-        alarmTime.setYear(now.getYear());
+        Calendar now = Calendar.getInstance();
 
         // if alarmTime occurs before now, set its day to tomorrow
-        if (now.compareTo(alarmTime) > 0)
+        if (alarmTime.before(now))
         {
-            Calendar c = Calendar.getInstance();
-            c.setTime(alarmTime);
-            c.add(Calendar.DATE, 1);
-            alarmTime = c.getTime();
+            // if the alarm time already happened, make it go off tomorrow instead
+            alarmTime.add(Calendar.DATE, 1);
         }
 
-        Log.d(TAG, "After: date = " + alarmTime.toString());
+        Log.d(TAG, "Alarm set for: " + alarmTime.getTime().toString());
 
         cancel();
         timer = new Timer();
-        timer.schedule(getAlarmTask(), alarmTime);
+        timer.schedule(getAlarmTask(), alarmTime.getTime());
         if (listener!= null) listener.onAlarmSet(alarmTime);
     }
 
     public void cancel()
     {
         if (timer != null) timer.cancel();
-        if (ringtone.isPlaying()) ringtone.stop();
         timer = null;
+        mediaPlayer.stop();
         if (listener != null) listener.onCancel();
     }
 
     public void ring()
     {
-        ringtone.play();
-        if (listener != null) listener.onRing();
+        // Mediaplayer has to be prepared before it can start (took 2 ms when I timed it)
+        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener()
+        {
+            @Override
+            public void onPrepared(MediaPlayer mp)
+            {
+                mediaPlayer.start();
+                if (listener != null) listener.onRing();
+            }
+        });
+
+        try
+        {
+            mediaPlayer.prepareAsync();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
-    // Gets a simple TimerTask that calls ring() when completed
+    // Method for neatness, returns a timertask that calls ring when completed
     private TimerTask getAlarmTask ()
     {
         return new TimerTask()
@@ -106,7 +115,7 @@ public class MirrorAlarm
 
     public interface AlarmListener
     {
-        public void onAlarmSet(Date time);
+        public void onAlarmSet(Calendar time);
         public void onCancel();
         public void onRing();
     }

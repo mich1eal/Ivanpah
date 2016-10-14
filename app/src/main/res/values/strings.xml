@@ -19,6 +19,7 @@
     <string name="control_status">Bluetooth status: </string>
     <string name="control_send">Set Alarm</string>
     <string name="control_cancel">Cancel Alarm</string>
+    <string name="control_launch_duo">Launch Duolingo</string>
     <string name="control_retry">Try again</string>
 
     <string name="status_connect">connected</string>

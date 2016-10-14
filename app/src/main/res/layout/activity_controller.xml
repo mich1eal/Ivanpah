@@ -48,4 +48,10 @@
         android:id="@+id/control_cancel"
         android:text="@string/control_cancel"/>
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/control_duo"
+        android:text="@string/control_launch_duo"/>
+
 </LinearLayout>
