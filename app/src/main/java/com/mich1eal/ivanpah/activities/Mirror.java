@@ -27,19 +27,22 @@ public class Mirror extends Activity
 {
     private static final String TAG = Controller.class.getSimpleName();
 
-    private static Weather weather;
-    private static Duolingo duolingo;
     private final static long weatherDelay = 5 * 60 * 1000; //Time between weather updates in millis
     private final static long duoDelay = 5 * 1000; // Time between duo updates in millis
     private final static double minRainDisplay = .1; //Minimum threshold for displaying rain prob
+    private final static int DUO_SNOOZE = 2; // Minutes to snooze each time a heartbeat is recieved
+
     private static TextView temp, max, min, icon,precipType, precipPercent, alarmIcon, alarmText;
     private static LinearLayout precipTile;
+
     private static Typeface weatherFont, iconFont, defaultFont;
     private static BWrapper bWrap;
-
+    private static Weather weather;
+    private static Duolingo duolingo;
     private static MirrorAlarm alarm;
 
-    private static boolean duoMode = false;
+    private static boolean activeDuo = false;
+    private static boolean upcomingDuo = false;
 
     //Format for alarm
     private static final SimpleDateFormat alarmFormat = new SimpleDateFormat("h:mm a");
@@ -101,7 +104,9 @@ public class Mirror extends Activity
             public void onAlarmSet(Calendar time)
             {
                 // Set UI
-                alarmText.setText(alarmFormat.format(time.getTime()));
+                String dispString = alarmFormat.format(time.getTime());
+                if (upcomingDuo) dispString += " - Duolingo";
+                alarmText.setText(dispString);
                 alarmText.setVisibility(View.VISIBLE);
                 alarmIcon.setVisibility(View.VISIBLE);
             }
@@ -116,7 +121,7 @@ public class Mirror extends Activity
             @Override
             public void onRing()
             {
-                startDuolingo();
+                if (upcomingDuo) startDuolingo();
             }
 
         });
@@ -178,27 +183,34 @@ public class Mirror extends Activity
         else precipTile.setVisibility(View.GONE);
     }
 
+    private static void handleCancel()
+    {
+        upcomingDuo = false;
+        //Alarm can't be canceld while duolingo is active
+        if (!activeDuo) alarm.cancel();
+    }
+
     private static void startDuolingo()
     {
-        if (duoMode == false) duolingo.setAutoUpdate(new Handler(), duoDelay);
-        duoMode = true;
+        if (activeDuo == false) duolingo.setAutoUpdate(new Handler(), duoDelay);
+        activeDuo = true;
+        upcomingDuo = false;
     }
 
     private static void endDuolingo()
     {
         duolingo.cancelAutoUpdate();
         alarm.cancel();
-        duoMode = false;
+        activeDuo = false;
     }
 
     // put off alarm by another 30 seconds
-    private static void recieveHeartbeat()
+    private static void handleHeartbeat()
     {
-        Log.d(TAG, "heartbeat");
-        if (duoMode)
+        if (activeDuo)
         {
             Calendar cal = Calendar.getInstance();
-            cal.add(Calendar.MINUTE, 2);
+            cal.add(Calendar.MINUTE, DUO_SNOOZE);
             alarm.setAlarm(cal);
         }
     }
@@ -220,7 +232,7 @@ public class Mirror extends Activity
         Log.d("MIRROR", "onActivityResult");
         if (requestCode == BWrapper.BLUETOOTH_RESPONSE && resultCode == BWrapper.BLUETOOTH_OK)
         {
-            Log.d("MIRROR", "Thanks for enable btooth, yo");
+            Log.d("MIRROR", "Bluetooth enabled");
             bWrap.onServerInit();
         }
     }
@@ -231,7 +243,6 @@ public class Mirror extends Activity
         bWrap.close();
         super.onDestroy();
     }
-
 
     public TimerTask snoozeTimer(final Handler handler)
     {
@@ -259,15 +270,27 @@ public class Mirror extends Activity
         {
             if (inputMessage.what == BWrapper.MESSAGE_READ)
             {
-                String time = (String) inputMessage.obj;
-                Log.d(TAG, "Recieved string: " + time);
-                // Message will either be a message to cancel, a long indicating when to set the alarm
-                if (time.equals(BWrapper.MESSAGE_CANCEL)) alarm.cancel();
-                else if (time.equals("heartbeat")) recieveHeartbeat();
-                else
+                final String msg = (String) inputMessage.obj;
+                final String[] args = msg.split(BWrapper.MESSAGE_DELIM);
+                Log.d(TAG, "Recieved string: " + msg);
+
+                // Message will be heartbeat, cancel, a long indicated alarm time,
+                // or a duolingo username, then alarm time
+                if (msg.equals(BWrapper.MESSAGE_HEARTBEAT)) handleHeartbeat();
+                else if (msg.equals(BWrapper.MESSAGE_CANCEL)) handleCancel();
+                else if (!activeDuo)
                 {
+                    if (args.length > 1)
+                    {
+                        upcomingDuo = true;
+                        duolingo.setUsername(args[1]);
+                    }
+                    else
+                    {
+                        upcomingDuo = false;
+                    }
                     final Calendar cal = Calendar.getInstance();
-                    cal.setTimeInMillis(Long.parseLong(time));
+                    cal.setTimeInMillis(Long.parseLong(args[0]));
                     alarm.setAlarm(cal);
                 }
             }

@@ -36,11 +36,23 @@
         android:id="@+id/control_time_pick">
     </TimePicker>
 
-    <Button
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/control_send"
-        android:text="@string/control_send"/>
+        android:orientation="horizontal">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/control_send"
+            android:text="@string/control_send"/>
+        <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/control_launch_duo"
+            android:id="@+id/control_duo_check"/>
+
+    </LinearLayout>
 
     <Button
         android:layout_width="wrap_content"
@@ -52,6 +64,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/control_duo"
-        android:text="@string/control_launch_duo"/>
+        android:text="@string/control_enable_duolingo"/>
+
+    <WebView
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:id="@+id/control_web">
+
+
+    </WebView>
 
 </LinearLayout>

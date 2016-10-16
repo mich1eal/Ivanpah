@@ -11,9 +11,10 @@ public class Duolingo
     extends JSONGetter
 {
     private static final String TAG = "DUOLINGO";
-    private static final String URL = "https://www.duolingo.com/users/mich1eal";
+    private static final String URL = "https://www.duolingo.com/users/";
     private static OnNewStreakListener listener;
     private static int lastStreak = Integer.MAX_VALUE;
+    private static String username = null;
 
 
     public void getStatus()
@@ -50,7 +51,16 @@ public class Duolingo
     @Override
     protected void getNewData()
     {
-        super.getJSON(URL);
+        if (username == null)
+        {
+            Log.e(TAG, "Username not set!");
+        }
+        super.getJSON(URL + username);
+    }
+
+    public void setUsername(String username)
+    {
+        this.username = username;
     }
 
     public interface OnNewStreakListener

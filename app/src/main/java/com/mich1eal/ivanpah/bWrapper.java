@@ -30,6 +30,8 @@ public class BWrapper
 
     public static final int MESSAGE_READ = 99;
     public static final String MESSAGE_CANCEL = "cancel";
+    public static final String MESSAGE_HEARTBEAT = "heartbeat";
+    public static final String MESSAGE_DELIM = "//";
 
     public static final int STATE_CONNECTED = 2;
     public static final int STATE_SEARCHING = 3;

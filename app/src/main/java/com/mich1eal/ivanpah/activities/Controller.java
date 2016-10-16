@@ -6,7 +6,9 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
 import android.view.View;
+import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
@@ -25,10 +27,13 @@ public class Controller extends Activity
     private static TextView statusText;
     private static Button retryButton, sendButton, cancelButton, duoButton;
     private static TimePicker timePick;
+    private static CheckBox duoCheck;
+    private static WebView webView;
+
     private static BWrapper bWrap;
     private boolean duoMode = false;
     private long lastTime;
-    private long heartbeatDelay = 3 * 1000;
+    private long heartbeatDelay = 3 * 1000; //Amount of time between heartbeats, in millis
 
 
     @Override
@@ -42,6 +47,8 @@ public class Controller extends Activity
         timePick = (TimePicker) findViewById(R.id.control_time_pick);
         cancelButton = (Button) findViewById(R.id.control_cancel);
         duoButton = (Button) findViewById(R.id.control_duo);
+        duoCheck = (CheckBox) findViewById(R.id.control_duo_check);
+        webView = (WebView) findViewById(R.id.control_web);
 
         retryButton.setOnClickListener(new View.OnClickListener()
         {
@@ -57,14 +64,15 @@ public class Controller extends Activity
             @Override
             public void onClick(View v)
             {
-
                 Calendar cal = Calendar.getInstance();
                 cal.set(Calendar.HOUR_OF_DAY, timePick.getCurrentHour());
                 cal.set(Calendar.MINUTE, timePick.getCurrentMinute());
                 cal.set(Calendar.SECOND, 0);
 
-                //Probably a better way to do this
-                bWrap.write(String.valueOf(cal.getTimeInMillis()));
+                String msg = String.valueOf(cal.getTimeInMillis());
+                if (duoCheck.isChecked()) msg = msg + BWrapper.MESSAGE_DELIM + "mich1eal";
+
+                bWrap.write(msg);
             }
         });
 
@@ -85,7 +93,7 @@ public class Controller extends Activity
             {
                 //Toggle duo mode
                 duoMode = !duoMode;
-                duoButton.setText(duoMode ? "Launch Duolingo" : "Cancel Duolingo");
+                duoButton.setText(duoMode ? "Cancel Duolingo" : "Launch Duolingo");
             }
         });
 
@@ -94,6 +102,8 @@ public class Controller extends Activity
         //Handler is static to prevent memory leaks. See:
         // http://stackoverflow.com/questions/11278875/handlers-and-memory-leaks-in-android
         bWrap = new BWrapper(this, new BHandler(), false);
+
+        //webView.loadUrl("https://www.duolingo.com");
     }
 
     static class BHandler extends Handler
@@ -146,7 +156,7 @@ public class Controller extends Activity
         final long now = System.currentTimeMillis();
         if (duoMode && now - lastTime > heartbeatDelay)
         {
-            bWrap.write("heartbeat");
+            bWrap.write(BWrapper.MESSAGE_HEARTBEAT);
             lastTime = now;
         }
     }
