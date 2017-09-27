@@ -28,11 +28,15 @@ public class BWrapper
     private static final UUID uuid = UUID.fromString("d3cb33f4-094f-4b55-b23e-e5d771ab2f92");
 
 
+    public static final String alarmTime = "ALARM_TIME";
+    public static final String username = "USERNAME";
+    public static final String hueIP = "HUE_IP";
+    public static final String hueTime = "HUE_TIME";
+
+
     public static final int MESSAGE_READ = 99;
     public static final String MESSAGE_CANCEL = "cancel";
     public static final String MESSAGE_HEARTBEAT = "heartbeat";
-    public static final String MESSAGE_DELIM = "//";
-
     public static final int STATE_CONNECTED = 2;
     public static final int STATE_SEARCHING = 3;
     public static final int STATE_DISCONNECTED = 4;
@@ -54,6 +58,7 @@ public class BWrapper
     private boolean serverFound = false;
     private Handler handler;
     private final boolean isServer;
+    private BroadcastReceiver receiver;
 
     private ConnectedThread connectedThread;
 
@@ -160,7 +165,7 @@ public class BWrapper
         // Otherwise check for new devices
         Log.d(TAG, "No server device paried, searching now");
         // Set up broadcast adapater
-        final BroadcastReceiver receiver = new BroadcastReceiver()
+        receiver = new BroadcastReceiver()
         {
             public void onReceive(Context context, Intent intent)
             {
@@ -198,6 +203,9 @@ public class BWrapper
     {
         Log.d(TAG, "Closing connections");
         setState(STATE_DISCONNECTED);
+
+        // only client registers a receiver
+        if (!isServer) context.unregisterReceiver(receiver);
     }
 
     // Wraper to hold ServerThread and ClientThread

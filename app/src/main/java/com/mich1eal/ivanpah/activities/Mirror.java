@@ -53,8 +53,9 @@ public class Mirror extends Activity
     private final static double minRainDisplay = .1; //Minimum threshold for displaying rain prob
     private final static int DUO_SNOOZE = 2; // Minutes to snooze each time a heartbeat is recieved
 
-    private final static String HUE_URL1 = "http://192.168.1.131/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/2/state";
-    private final static String HUE_URL2 = "http://192.168.1.131/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/3/state";
+    private final static String HUE_URL_BASE = "http://";
+    private final static String HUE_URL_END1 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/2/state";
+    private final static String HUE_URL_END2 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/3/state";
 
 
     private static TextView temp, max, min, icon,precipType, precipPercent, alarmIcon, alarmText, messageDisplay;
@@ -79,6 +80,11 @@ public class Mirror extends Activity
     // Offsets between sunsets and sunrise for dimming purposes, in seconds
     private static long sunriseOffset = 60 * 60;
     private static long sunsetOffset = 120 * 60;
+
+    private static boolean hueEnabled = false;
+    private static String hueIP;
+    private static int hueMins;
+
 
 
     //Format for alarm
@@ -245,29 +251,36 @@ public class Mirror extends Activity
 
 
         //Stuff for hue
-        final long brightTime = 1800000; //30 mins
 
         Timer timer = new Timer();
         TimerTask task = new TimerTask()
         {
             public void run()
             {
-                long timeLeft = alarm.timeToAlarm();
-                if (timeLeft > 0)
+                if (hueEnabled)
                 {
-                    if (timeLeft < brightTime)
+                    long timeLeft = alarm.timeToAlarm();
+                    if (timeLeft > 0)
                     {
-                        int bright = (int) ((brightTime - timeLeft) * 255 / brightTime);
+                        long brightTime = hueMins * 60 * 1000;
+                        if (timeLeft < brightTime)
+                        {
+                            int bright = (int) ((brightTime - timeLeft) * 255 / brightTime);
 
-                        new URLCaller().execute(HUE_URL1, "{\"on\":true, \"bri\":" + bright + "}");
-                        new URLCaller().execute(HUE_URL2, "{\"on\":true, \"bri\":" + bright + "}");
+                            new URLCaller().execute(HUE_URL_BASE + hueIP + HUE_URL_END1,
+                                    "{\"on\":true, \"bri\":" + bright + "}");
+
+                            new URLCaller().execute(HUE_URL_BASE + hueIP + HUE_URL_END2,
+                                    "{\"on\":true, \"bri\":" + bright + "}");
+                        }
                     }
+
                 }
             }
         };
 
 
-        timer.schedule(task, 0, 60000);
+        timer.schedule(task, 0, 5 * 1000);
     }
 
     @Override
@@ -422,6 +435,7 @@ public class Mirror extends Activity
     private static void handleCancel()
     {
         upcomingDuo = false;
+        hueEnabled = false;
         //Alarm can't be canceld while duolingo is active
         if (!activeDuo) alarm.cancel();
     }
@@ -476,7 +490,10 @@ public class Mirror extends Activity
     @Override
     public void onDestroy()
     {
-        bWrap.close();
+        if (bWrap != null)
+        {
+            bWrap.close();
+        }
         super.onDestroy();
     }
 
@@ -507,27 +524,62 @@ public class Mirror extends Activity
             if (inputMessage.what == BWrapper.MESSAGE_READ)
             {
                 final String msg = (String) inputMessage.obj;
-                final String[] args = msg.split(BWrapper.MESSAGE_DELIM);
                 Log.d(TAG, "Recieved string: " + msg);
 
                 // Message will be heartbeat, cancel, a long indicated alarm time,
                 // or a duolingo username, then alarm time
                 if (msg.equals(BWrapper.MESSAGE_HEARTBEAT)) handleHeartbeat();
                 else if (msg.equals(BWrapper.MESSAGE_CANCEL)) handleCancel();
-                else if (!activeDuo)
+
+                else
                 {
-                    if (args.length > 1)
+                    String tempDuoUserName = null;
+                    String tempHueIP = null;
+                    int tempHueTime = -1;
+                    long tempAlarmTime = -1;
+
+                    JSONObject json;
+                    try
                     {
-                        upcomingDuo = true;
-                        duolingo.setUsername(args[1]);
+                        json = new JSONObject(msg);
+                        if (json.has(BWrapper.alarmTime)) tempAlarmTime = json.getLong(BWrapper.alarmTime);
+                        if (json.has(BWrapper.username)) tempDuoUserName = json.getString(BWrapper.username);
+                        if (json.has(BWrapper.hueTime)) tempHueTime = json.getInt(BWrapper.hueTime);
+                        if (json.has(BWrapper.hueIP)) tempHueIP = json.getString(BWrapper.hueIP);
                     }
-                    else
+                    catch (Exception e)
                     {
-                        upcomingDuo = false;
+                        e.printStackTrace();
                     }
-                    final Calendar cal = Calendar.getInstance();
-                    cal.setTimeInMillis(Long.parseLong(args[0]));
-                    alarm.setAlarm(cal);
+
+                    if (!activeDuo)
+                    {
+                        if (tempHueIP != null)
+                        {
+                            hueEnabled = true;
+                            hueIP = tempHueIP;
+                            hueMins = tempHueTime;
+                        }
+                        else
+                        {
+                            hueEnabled = false;
+                        }
+
+                        if (tempDuoUserName != null)
+                        {
+                            upcomingDuo = true;
+                            duolingo.setUsername(tempDuoUserName);
+                        }
+                        else
+                        {
+                            upcomingDuo = false;
+                        }
+
+                        final Calendar cal = Calendar.getInstance();
+                        cal.setTimeInMillis(tempAlarmTime);
+                        alarm.setAlarm(cal);
+                    }
+
                 }
             }
         }

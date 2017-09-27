@@ -1,6 +1,8 @@
 package com.mich1eal.ivanpah.activities;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -10,12 +12,17 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
 import com.mich1eal.ivanpah.BWrapper;
 import com.mich1eal.ivanpah.R;
+
+import org.json.JSONObject;
 
 import java.util.Calendar;
 
@@ -27,16 +34,20 @@ public class Controller extends Activity
     private static final String TAG = Controller.class.getSimpleName();
 
     private static TextView statusText;
-    private static Button retryButton, sendButton, cancelButton, duoButton;
+    private static Button retryButton, sendButton, cancelButton, duoButton, settingsButton;
     private static TimePicker timePick;
-    private static CheckBox duoCheck;
+    private static CheckBox duoCheck, hueCheck;
+    private static EditText hueText;
     private static WebView webView;
-    private static LinearLayout alarmFrame;
+    private static LinearLayout alarmFrame, hueFrame, hueTimeFrame;
 
     private static BWrapper bWrap;
     private boolean duoMode = false;
     private long lastTime;
     private long heartbeatDelay = 3 * 1000; //Amount of time between heartbeats, in millis
+
+    private static String hueIP;
+    private static boolean hueEnabled;
 
 
     @Override
@@ -49,10 +60,45 @@ public class Controller extends Activity
         sendButton = (Button) findViewById(R.id.control_send);
         timePick = (TimePicker) findViewById(R.id.control_time_pick);
         cancelButton = (Button) findViewById(R.id.control_cancel);
+        settingsButton = (Button) findViewById(R.id.control_settings);
         duoButton = (Button) findViewById(R.id.control_duo);
         duoCheck = (CheckBox) findViewById(R.id.control_duo_check);
+        hueCheck = (CheckBox) findViewById(R.id.control_hue_check);
         webView = (WebView) findViewById(R.id.control_web);
         alarmFrame = (LinearLayout) findViewById(R.id.control_frame_alarm);
+        hueFrame = (LinearLayout) findViewById(R.id.control_hue_container);
+        hueTimeFrame = (LinearLayout) findViewById(R.id.control_hue_time_frame);
+        hueText = (EditText) findViewById(R.id.control_hue_time);
+
+        SharedPreferences settings = getSharedPreferences(getString(R.string.prefs), MODE_PRIVATE);
+
+        hueEnabled = settings.getBoolean(Setup.enableHue, false);
+
+
+
+        if (hueEnabled)
+        {
+            hueIP = settings.getString(Setup.hueIPStr, "NONE");
+            hueFrame.setVisibility(View.VISIBLE);
+            hueCheck.setText("Use Phillips Hue (IP: " + hueIP + ")");
+        }
+
+        hueCheck.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked)
+                {
+                    hueTimeFrame.setVisibility(View.VISIBLE);
+                    hueText.setText("30");
+                }
+                else
+                {
+                    hueTimeFrame.setVisibility(View.GONE);
+                }
+            }
+        });
+
+
 
         retryButton.setOnClickListener(new View.OnClickListener()
         {
@@ -73,10 +119,23 @@ public class Controller extends Activity
                 cal.set(Calendar.MINUTE, timePick.getCurrentMinute());
                 cal.set(Calendar.SECOND, 0);
 
-                String msg = String.valueOf(cal.getTimeInMillis());
-                if (duoCheck.isChecked()) msg = msg + BWrapper.MESSAGE_DELIM + "mich1eal";
+                JSONObject json = new JSONObject();
+                try
+                {
+                    json.put(BWrapper.alarmTime, cal.getTimeInMillis());
+                    if (duoCheck.isChecked()) json.put(BWrapper.username, "mich1eal");
+                    if (hueEnabled)
+                    {
+                        json.put(BWrapper.hueIP, hueIP);
+                        json.put(BWrapper.hueTime, Integer.valueOf(hueText.getText().toString()));
+                    }
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
 
-                bWrap.write(msg);
+                bWrap.write(json.toString());
             }
         });
 
@@ -113,6 +172,13 @@ public class Controller extends Activity
             }
         });
 
+        settingsButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+
+                launchSetup();
+            }
+        });
 
         //Handler is static to prevent memory leaks. See:
         // http://stackoverflow.com/questions/11278875/handlers-and-memory-leaks-in-android
@@ -184,5 +250,14 @@ public class Controller extends Activity
             lastTime = now;
         }
     }
+
+    private void launchSetup()
+    {
+        Intent i = new Intent(this, Setup.class);
+        i.setFlags(i.getFlags() | Intent.FLAG_ACTIVITY_NO_HISTORY);
+        startActivity(i);
+        finish();
+    }
+
 
 }

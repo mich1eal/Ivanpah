@@ -4,7 +4,8 @@
               android:layout_height="match_parent"
               android:orientation="vertical"
               android:background="#000000"
-              tools:context=".setup">
+              tools:context=".setup"
+                android:padding="10dp">
 
     <TextView
         android:layout_width="match_parent"
@@ -56,6 +57,34 @@
         android:id="@+id/setup_gps"
         android:text="Always Pittsburgh"
         />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:id="@+id/setup_hue"
+            android:text="Enable Hue"
+            />
+
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="20dp"
+            android:hint="IP Address"
+            android:visibility="gone"
+            android:id="@+id/setup_hue_ip"/>
+
+
+
+
+    </LinearLayout>
+
 
 
 
