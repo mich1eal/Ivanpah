@@ -7,8 +7,10 @@ import android.os.Message;
 import android.util.Log;
 import android.view.View;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
@@ -29,6 +31,7 @@ public class Controller extends Activity
     private static TimePicker timePick;
     private static CheckBox duoCheck;
     private static WebView webView;
+    private static LinearLayout alarmFrame;
 
     private static BWrapper bWrap;
     private boolean duoMode = false;
@@ -49,6 +52,7 @@ public class Controller extends Activity
         duoButton = (Button) findViewById(R.id.control_duo);
         duoCheck = (CheckBox) findViewById(R.id.control_duo_check);
         webView = (WebView) findViewById(R.id.control_web);
+        alarmFrame = (LinearLayout) findViewById(R.id.control_frame_alarm);
 
         retryButton.setOnClickListener(new View.OnClickListener()
         {
@@ -93,17 +97,37 @@ public class Controller extends Activity
             {
                 //Toggle duo mode
                 duoMode = !duoMode;
-                duoButton.setText(duoMode ? "Cancel Duolingo" : "Launch Duolingo");
+                if (duoMode)
+                {
+                    alarmFrame.setVisibility(View.GONE);
+                    webView.setVisibility(View.VISIBLE);
+                    duoButton.setText(R.string.control_cancel_duo);
+                }
+                else
+                {
+                    alarmFrame.setVisibility(View.VISIBLE);
+                    webView.setVisibility(View.GONE);
+                    duoButton.setText(R.string.control_launch_duo);
+                }
+
             }
         });
-
 
 
         //Handler is static to prevent memory leaks. See:
         // http://stackoverflow.com/questions/11278875/handlers-and-memory-leaks-in-android
         bWrap = new BWrapper(this, new BHandler(), false);
 
-        //webView.loadUrl("https://www.duolingo.com");
+        webView.setWebViewClient(new WebViewClient() {
+            public void onReceivedError(WebView view, int errorCode, String description, String   failingUrl)
+            {
+
+            }
+        });
+
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.getSettings().setUserAgentString("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/20100101 Firefox/4.0");
+        webView.loadUrl("https://www.duolingo.com");
     }
 
     static class BHandler extends Handler

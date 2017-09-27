@@ -73,8 +73,6 @@ public abstract class JSONGetter
     }
 
 
-
-
     private class AsyncHttp extends AsyncTask<String, String, JSONObject>
     {
         @Override

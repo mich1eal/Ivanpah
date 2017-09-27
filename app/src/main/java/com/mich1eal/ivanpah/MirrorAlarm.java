@@ -20,6 +20,7 @@ public class MirrorAlarm
     private Context context;
     private AlarmListener listener;
     private Timer timer;
+    private Calendar alarmTime;
     private static MediaPlayer mediaPlayer;
 
     public MirrorAlarm(Context context)
@@ -43,6 +44,7 @@ public class MirrorAlarm
     public void setAlarm(Calendar alarmTime)
     {
         Calendar now = Calendar.getInstance();
+        this.alarmTime = alarmTime;
 
         // if alarmTime occurs before now, set its day to tomorrow
         if (alarmTime.before(now))
@@ -112,6 +114,16 @@ public class MirrorAlarm
             }
         };
     }
+
+    public long timeToAlarm()
+    {
+        if (timer != null)
+        {
+            return alarmTime.getTimeInMillis() - Calendar.getInstance().getTimeInMillis();
+        }
+        return -1;
+    }
+
 
     public interface AlarmListener
     {

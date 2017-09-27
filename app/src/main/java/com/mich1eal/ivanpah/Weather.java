@@ -20,6 +20,7 @@ public class Weather
     private WeatherUpdateListener listener;
 
     private Location lastLoc = null;
+    private Location permLoc = null;
     private JSONObject lastJSON = null;
 
     private boolean hasValues = false;
@@ -30,13 +31,17 @@ public class Weather
     private double precipChance;
     private String precipType;
     private boolean isPrecip;
+    private long sunRise = -1;
+    private long sunSet = -1;
 
     private Weather(){}
 
-    public Weather(LocationManager manager, WeatherUpdateListener listener)
+    public Weather(LocationManager manager, WeatherUpdateListener listener, Location permLoc)
     {
         lm = manager;
         this.listener = listener;
+        this.permLoc = permLoc;
+        this.lastLoc = permLoc;
     }
 
     public int getTemp(){return temp;}
@@ -47,6 +52,8 @@ public class Weather
     public String getPrecipType(){return precipType;}
     public boolean hasValues(){return hasValues;}
     public boolean isPrecip(){return isPrecip;}
+    public long getSunrise(){return sunRise;}
+    public long getSunSet(){return sunSet;}
 
     @Override
     protected void onComplete(JSONObject json)
@@ -59,20 +66,27 @@ public class Weather
     @Override
     protected void getNewData()
     {
-        Location loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        if (loc != null)
+        if (permLoc == null)
         {
-            Log.d(TAG, "Location = " + loc.toString());
-            lastLoc = loc;
+            Location loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (loc != null)
+            {
+                Log.d(TAG, "Location = " + loc.toString());
+                lastLoc = loc;
+            }
+
+            if (lastLoc == null)
+            {
+                Log.e(TAG, "No location available");
+                return;
+            }
+        }
+        else
+        {
+            lastLoc = permLoc;
         }
 
-        if (lastLoc == null)
-        {
-            Log.e(TAG, "No location available");
-            return;
-        }
-
-        String apiurl = "https://api.forecast.io/forecast/" +
+        String apiurl = "https://api.darksky.net/forecast/" +
                 APIKey + '/' +
                 lastLoc.getLatitude() + ',' +
                 lastLoc.getLongitude();
@@ -137,6 +151,20 @@ public class Weather
             JSONObject today = lastJSON.getJSONObject("daily").getJSONArray("data").getJSONObject(0);
             min = today.getInt("temperatureMin");
             max = today.getInt("temperatureMax");
+            sunRise = today.getLong("sunriseTime");
+            sunSet = today.getLong("sunsetTime");
+        }
+        catch (JSONException e)
+        {
+            Log.e(TAG, e.getMessage());
+        }
+
+        // Rain data isn't always available so fetch it seperately
+        precipChance = 0;
+
+        try
+        {
+            JSONObject today = lastJSON.getJSONObject("daily").getJSONArray("data").getJSONObject(0);
             precipType = "wi_" + today.getString("precipType");
             precipChance = (float) today.getDouble("precipProbability");
         }
@@ -144,6 +172,8 @@ public class Weather
         {
             Log.e(TAG, e.getMessage());
         }
+
+
     }
 
     public interface WeatherUpdateListener

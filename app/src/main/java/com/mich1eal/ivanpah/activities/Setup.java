@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
@@ -18,6 +19,10 @@ public class Setup extends Activity
 {
     private static RadioGroup radios;
     private static SharedPreferences settings;
+    private static CheckBox duoCheck, gps;
+
+    public static String hasDuo = "HAS_DUO";
+    public static String alwaysPittsburgh = "ALWAYAS_PITTSBURGH";
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -28,7 +33,6 @@ public class Setup extends Activity
 
         boolean isLaunch = getIntent().getAction() == Intent.ACTION_MAIN;
         boolean isSetUp = settings.contains(getString(R.string.config));
-
         if (isLaunch && isSetUp)
         {
             // New launch and app is already configured - go straight to function
@@ -42,6 +46,11 @@ public class Setup extends Activity
         radios.check(radios.getChildAt(0).getId()); //Set first option selected by default
         TextView welcome = (TextView) findViewById(R.id.setup_welcome);
 
+        duoCheck = (CheckBox) findViewById(R.id.setup_duo);
+        gps = (CheckBox) findViewById(R.id.setup_gps);
+
+
+
         if (!isLaunch) welcome.setVisibility(View.GONE); //if not launch, hide the welcome message
 
         go.setOnClickListener(new View.OnClickListener()
@@ -52,6 +61,9 @@ public class Setup extends Activity
                 //One radio button is pre checked
                 boolean isMirror = radios.getCheckedRadioButtonId() == 1; //first option is mirror
                 settings.edit().putBoolean(getString(R.string.config), isMirror).commit();
+                settings.edit().putBoolean(hasDuo, duoCheck.isChecked()).commit();
+                settings.edit().putBoolean(alwaysPittsburgh, gps.isChecked()).commit();
+
                 launchMirror();
             }
         });
