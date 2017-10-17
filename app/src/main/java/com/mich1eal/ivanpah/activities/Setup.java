@@ -80,6 +80,28 @@ public class Setup extends Activity
 
         if (!isLaunch) welcome.setVisibility(View.GONE); //if not launch, hide the welcome message
 
+        // set presets if available
+
+        //checked if hue enabled, unchecked by default
+        hue.setChecked(settings.getBoolean(enableHue, false));
+
+        //set hue IP unless its null
+        hueIP.setText(settings.getString(hueIPStr, ""));
+
+        duoCheck.setChecked(settings.getBoolean(hasDuo, false));
+
+        gps.setChecked(settings.getBoolean(alwaysPittsburgh, false));
+
+        if (settings.contains(getString(R.string.config)))
+        {
+            int checkId = settings.getBoolean(getString(R.string.config), false) ? 0 : 1;
+            radios.check(radios.getChildAt(checkId).getId());
+        }
+
+
+
+
+
         go.setOnClickListener(new View.OnClickListener()
         {
             @Override

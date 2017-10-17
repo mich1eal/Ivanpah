@@ -39,6 +39,15 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_toRightOf="@id/control_retry"
+            android:layout_alignTop="@id/control_retry"
+            android:layout_marginLeft="30dp"
+            android:id="@+id/control_duo"
+            android:text="@string/control_launch_duo"/>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:id="@+id/control_settings"
             android:text="@string/control_settings"/>
@@ -50,11 +59,6 @@
         android:orientation="vertical"
         android:id="@+id/control_frame_alarm">
 
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/control_duo"
-            android:text="@string/control_launch_duo"/>
 
         <TimePicker
             android:layout_width="wrap_content"
