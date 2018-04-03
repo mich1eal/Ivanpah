@@ -76,7 +76,7 @@ public class Controller extends Activity
 
 
 
-        if (hueEnabled)
+        /*if (hueEnabled)
         {
             hueIP = settings.getString(Setup.hueIPStr, "NONE");
             hueFrame.setVisibility(View.VISIBLE);
@@ -96,7 +96,7 @@ public class Controller extends Activity
                     hueTimeFrame.setVisibility(View.GONE);
                 }
             }
-        });
+        });*/
 
 
 
@@ -124,7 +124,7 @@ public class Controller extends Activity
                 {
                     json.put(BWrapper.alarmTime, cal.getTimeInMillis());
                     if (duoCheck.isChecked()) json.put(BWrapper.username, "mich1eal");
-                    if (hueEnabled)
+                    if (hueCheck.isChecked())
                     {
                         json.put(BWrapper.hueIP, hueIP);
                         json.put(BWrapper.hueTime, Integer.valueOf(hueText.getText().toString()));
@@ -149,7 +149,7 @@ public class Controller extends Activity
 
         });
 
-        duoButton.setOnClickListener(new View.OnClickListener()
+        /*duoButton.setOnClickListener(new View.OnClickListener()
         {
             @Override
             public void onClick(View v)
@@ -170,7 +170,7 @@ public class Controller extends Activity
                 }
 
             }
-        });
+        });*/
 
         settingsButton.setOnClickListener(new View.OnClickListener(){
             @Override

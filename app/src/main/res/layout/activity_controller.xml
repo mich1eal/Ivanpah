@@ -43,13 +43,16 @@
             android:layout_alignTop="@id/control_retry"
             android:layout_marginLeft="30dp"
             android:id="@+id/control_duo"
-            android:text="@string/control_launch_duo"/>
+            android:text="@string/control_launch_duo"
+            android:visibility="gone"
+            />
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:id="@+id/control_settings"
+            android:visibility="gone"
             android:text="@string/control_settings"/>
     </RelativeLayout>
 
@@ -71,6 +74,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/control_enable_duolingo"
+            android:visibility="gone"
             android:id="@+id/control_duo_check"
             android:layout_margin="5dp"/>
 

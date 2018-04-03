@@ -55,7 +55,7 @@
         android:layout_height="wrap_content"
         android:layout_margin="5dp"
         android:id="@+id/setup_gps"
-        android:text="Always Pittsburgh"
+        android:text="Always Vienna"
         />
 
     <LinearLayout

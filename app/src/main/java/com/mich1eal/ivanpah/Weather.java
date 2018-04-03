@@ -47,6 +47,10 @@ public class Weather
     public int getTemp(){return temp;}
     public int getMin(){return min;}
     public int getMax(){return max;}
+    public int getC(int F)
+    {
+        return (int) ((F - 32) * .5556);
+    }
     public String getCond(){return cond;}
     public double getPrecipChance(){return precipChance;}
     public String getPrecipType(){return precipType;}

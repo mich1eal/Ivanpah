@@ -24,8 +24,8 @@ import java.util.UUID;
 public class BWrapper
 {
     private static final String TAG = BWrapper.class.getSimpleName();
-    private static final String SERVER_NAME = "Ivanpah Smart Mirror";
-    private static final UUID uuid = UUID.fromString("d3cb33f4-094f-4b55-b23e-e5d771ab2f92");
+    private static final String SERVER_NAME = "Ivanpah Smart Mirror - Trixi";
+    private static final UUID uuid = UUID.fromString("511cd3a1-100a-4cc8-811c-ee2384e20ee6");
 
 
     public static final String alarmTime = "ALARM_TIME";

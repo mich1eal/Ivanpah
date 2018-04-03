@@ -41,7 +41,7 @@ public class MirrorAlarm
     }
 
     // Sets alarm to ring at the given calendar date. Overwrites any alarms currently in progress
-    public void setAlarm(Calendar alarmTime)
+    public void setAlarm(Calendar alarmTime, boolean hueEnabled)
     {
         Calendar now = Calendar.getInstance();
         this.alarmTime = alarmTime;
@@ -58,7 +58,7 @@ public class MirrorAlarm
         cancel();
         timer = new Timer();
         timer.schedule(getAlarmTask(), alarmTime.getTime());
-        if (listener!= null) listener.onAlarmSet(alarmTime);
+        if (listener!= null) listener.onAlarmSet(alarmTime, hueEnabled);
     }
 
     public void cancel()
@@ -127,7 +127,7 @@ public class MirrorAlarm
 
     public interface AlarmListener
     {
-        public void onAlarmSet(Calendar time);
+        public void onAlarmSet(Calendar time, boolean hueEnabled);
         public void onCancel();
         public void onRing();
     }

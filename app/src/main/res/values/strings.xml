@@ -2,7 +2,7 @@
 
     <string name="app_name">Ivanpah</string>
 
-    <string name="time_format">h:mm</string>
+    <string name="time_format">H:mm</string>
     <string name="date_format">EEEE, MMMM d</string>
 
     <string name="placeholder">-</string>

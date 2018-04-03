@@ -74,7 +74,7 @@ public class Mirror extends Activity
 
     private static int brightness;
 
-    private static int fullDarkLevel = 100;
+    private static int fullDarkLevel = 0;
     private static int fullBrightlevel = 255;
 
     // Offsets between sunsets and sunrise for dimming purposes, in seconds
@@ -175,14 +175,18 @@ public class Mirror extends Activity
         Location permLoc = null;
         if (getSharedPreferences(getString(R.string.prefs), MODE_PRIVATE).getBoolean(Setup.alwaysPittsburgh, false))
         {
-            permLoc = new Location("Pittsburgh");
+            permLoc = new Location("Vienna");
             // These are values for Pittsburgh PA
             //permLoc.setLatitude(40.4406);
             //permLoc.setLongitude(-79.9959);
 
             // These for Indy
-            permLoc.setLatitude(39.7739318);
-            permLoc.setLongitude(-86.15002229999999);
+            //permLoc.setLatitude(39.7739318);
+            //permLoc.setLongitude(-86.15002229999999);
+
+            // These for Vienna
+            permLoc.setLatitude(48.2082);
+            permLoc.setLongitude(16.3738);
         }
 
         // Initialize data fetchers
@@ -224,7 +228,7 @@ public class Mirror extends Activity
         alarm.setAlarmListener(new MirrorAlarm.AlarmListener()
         {
             @Override
-            public void onAlarmSet(Calendar time)
+            public void onAlarmSet(Calendar time, boolean hueEnabledForAlarm)
             {
                 // Set UI
                 String dispString = alarmFormat.format(time.getTime());
@@ -232,6 +236,10 @@ public class Mirror extends Activity
                 alarmText.setText(dispString);
                 alarmText.setVisibility(View.VISIBLE);
                 alarmIcon.setVisibility(View.VISIBLE);
+
+                hueEnabled = hueEnabledForAlarm;
+
+                Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullDarkLevel);
             }
 
             @Override
@@ -239,11 +247,15 @@ public class Mirror extends Activity
             {
                 alarmText.setVisibility(View.GONE);
                 alarmIcon.setVisibility(View.GONE);
+                upcomingDuo = false;
+                hueEnabled = false;
+                Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
             }
 
             @Override
             public void onRing()
             {
+                Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
                 if (upcomingDuo) startDuolingo();
             }
 
@@ -259,10 +271,11 @@ public class Mirror extends Activity
             {
                 if (hueEnabled)
                 {
+                    // how much time till alarm
                     long timeLeft = alarm.timeToAlarm();
                     if (timeLeft > 0)
                     {
-                        long brightTime = hueMins * 60 * 1000;
+                        long brightTime = hueMins * 60 * 1000; // time to full brightness in milliseconds
                         if (timeLeft < brightTime)
                         {
                             int bright = (int) ((brightTime - timeLeft) * 255 / brightTime);
@@ -302,37 +315,39 @@ public class Mirror extends Activity
 
 
         // Birthday
-        if (month == Calendar.FEBRUARY && date == 24)
+        if (month == Calendar.SEPTEMBER && date == 10)
         {
             allWeather.setVisibility(View.GONE);
-            messageDisplay.setText("HAPPY\nBIRTHDAY\nMOM!!!\n");
+            messageDisplay.setText("HAPPY\nBIRTHDAY\nTRIXI!!\n");
             messageDisplay.setVisibility(View.VISIBLE);
             messageDisplay.setTextSize(125);
         }
-        // Mothers day
-        else if (month == Calendar.MAY && day == Calendar.SUNDAY && dayCount == 2)
+        // Anniversary
+        else if (month == Calendar.MAY && date == 13)
         {
             allWeather.setVisibility(View.GONE);
-            messageDisplay.setText("HAPPY\nMOTHER'S\nDAY!!!\n");
+            messageDisplay.setText("Shönen\nJahrestag!!\n");
             messageDisplay.setVisibility(View.VISIBLE);
             messageDisplay.setTextSize(125);
         }
-        //Anniversary
-        else if (month == Calendar.JUNE && date == 18)
+        //Nicholas Day
+        else if (month == Calendar.DECEMBER && date == 6)
         {
             allWeather.setVisibility(View.GONE);
-            messageDisplay.setText("HAPPY\nANNIVERSARY!!!\n");
+            messageDisplay.setText("Frohen\nNikolaus!!\n");
             messageDisplay.setTextSize(75);
             messageDisplay.setVisibility(View.VISIBLE);
         }
 
-        else if (month == Calendar.SEPTEMBER && date == 30)
+        //Random
+        else if (date == 17 && month % 2 == 0)
         {
             allWeather.setVisibility(View.GONE);
-            messageDisplay.setText("HAPPY\nBIRTHDAY\nDAD!!!\n");
+            messageDisplay.setText("ICH\nLIEBE\nDICH!\n");
             messageDisplay.setTextSize(75);
             messageDisplay.setVisibility(View.VISIBLE);
         }
+
 
         else
         {
@@ -340,9 +355,9 @@ public class Mirror extends Activity
             messageDisplay.setVisibility(View.GONE);
 
             //Set temps
-            temp.setText(weather.getTemp() + " \u2109");
-            min.setText(weather.getMin() + " \u2109");
-            max.setText(weather.getMax() + " \u2109");
+            temp.setText(weather.getC(weather.getTemp()) + " \u2103");
+            min.setText(weather.getC(weather.getMin()) + " \u2103");
+            max.setText(weather.getC(weather.getMax()) + " \u2103");
 
             // Set master icon
             String cond = weather.getCond();
@@ -432,14 +447,6 @@ public class Mirror extends Activity
 
     }
 
-    private static void handleCancel()
-    {
-        upcomingDuo = false;
-        hueEnabled = false;
-        //Alarm can't be canceld while duolingo is active
-        if (!activeDuo) alarm.cancel();
-    }
-
     private static void startDuolingo()
     {
         if (activeDuo == false) duolingo.setAutoUpdate(new Handler(), duoDelay);
@@ -450,8 +457,8 @@ public class Mirror extends Activity
     private static void endDuolingo()
     {
         duolingo.cancelAutoUpdate();
-        alarm.cancel();
         activeDuo = false;
+        alarm.cancel();
     }
 
     // put off alarm by another 30 seconds
@@ -461,7 +468,7 @@ public class Mirror extends Activity
         {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.MINUTE, DUO_SNOOZE);
-            alarm.setAlarm(cal);
+            alarm.setAlarm(cal, hueEnabled);
         }
     }
 
@@ -529,7 +536,10 @@ public class Mirror extends Activity
                 // Message will be heartbeat, cancel, a long indicated alarm time,
                 // or a duolingo username, then alarm time
                 if (msg.equals(BWrapper.MESSAGE_HEARTBEAT)) handleHeartbeat();
-                else if (msg.equals(BWrapper.MESSAGE_CANCEL)) handleCancel();
+                else if (msg.equals(BWrapper.MESSAGE_CANCEL))
+                {
+                    if (!activeDuo) alarm.cancel();
+                }
 
                 else
                 {
@@ -559,6 +569,7 @@ public class Mirror extends Activity
                             hueEnabled = true;
                             hueIP = tempHueIP;
                             hueMins = tempHueTime;
+                            Log.d(TAG, "Hue enabled, IP set to: " + hueIP);
                         }
                         else
                         {
@@ -577,14 +588,13 @@ public class Mirror extends Activity
 
                         final Calendar cal = Calendar.getInstance();
                         cal.setTimeInMillis(tempAlarmTime);
-                        alarm.setAlarm(cal);
+                        alarm.setAlarm(cal, hueEnabled);
                     }
 
                 }
             }
         }
     }
-
 
     public static class URLCaller extends AsyncTask<String, Void, Void>
     {
@@ -619,9 +629,6 @@ public class Mirror extends Activity
             }
 
             return null;
-
         }
-
     }
-
 }
