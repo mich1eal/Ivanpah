@@ -1,159 +1,201 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
              xmlns:tools="http://schemas.android.com/tools"
              android:layout_width="match_parent"
              android:layout_height="wrap_content"
-              android:orientation="vertical"
+             android:orientation="vertical"
              android:background="#000000"
              tools:context=".main">
 
-    <!-- Notifications bar-->
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/alarmIcon"
-            android:text="@string/alarm_icon"
-            android:visibility="gone"
-            android:textColor="#FFF04C"
-            android:textSize="60dp"
-            />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/alarmText"
-            android:text="@string/alarm_test"
-            android:visibility="gone"
-            android:textColor="#FFF04C"
-            android:textSize="60dp"/>
-
-    </LinearLayout>
+        android:layout_height="match_parent">
 
 
-    <TextClock
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/clock"
-        android:format24Hour="@string/time_format"
-        android:textColor="@android:color/white"
-        android:textSize="230sp"
-        android:layout_marginTop="-60sp"
-        android:layout_marginBottom="-30sp"
-        />
-
-    <TextClock
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/date"
-        android:format24Hour="@string/date_format"
-        android:textColor="@android:color/white"
-        android:textSize="50sp"
-        />
-
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/messageView"
-        android:visibility="gone"
-        android:layout_marginTop="50dp"
-        android:textColor="@android:color/white"
-        />
-
-
-
-    <!-- container for weather tile and rain chance !-->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/allWeather"
-        android:orientation="horizontal"
-        android:layout_gravity="top">
-
-        <!-- Weather tile !-->
+        <!-- Top Linear Layout -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:id="@+id/topLayout"
             android:orientation="vertical"
-            android:background="@drawable/tile_thin_white"
-            android:layout_marginTop="80dp"
-            android:padding="15dp">
+            android:layout_margin="20dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:id="@+id/temp"
-                android:textColor="@android:color/white"
-                android:textSize="90sp"
-                android:text="@string/placeholder"
-                />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/icon"
-                android:layout_gravity="center_horizontal"
-                android:textColor="@android:color/white"
-                android:textSize="150sp"
-                android:text="@string/placeholder"
-                />
-
-            <!-- high/low display -->
+            <!-- Notifications bar-->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/alarmIcon"
+                    android:text="@string/alarm_icon"
+                    android:visibility="gone"
+                    android:textColor="#FFF04C"
+                    android:textSize="50dp"
+                    />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/alarmText"
+                    android:text="@string/alarm_test"
+                    android:visibility="gone"
+                    android:textColor="#FFF04C"
+                    android:textSize="50dp"/>
+            </LinearLayout>
+
+            <!-- clock -->
+            <TextClock
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/clock"
+                android:format24Hour="@string/time_format"
+                android:textColor="@android:color/white"
+                android:textSize="150sp"
+                android:layout_marginTop="-30sp"
+                android:layout_marginBottom="-30sp"
+                />
+
+            <TextView
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/messageView"
+                android:visibility="gone"
+                android:layout_marginTop="50dp"
+                android:textColor="@android:color/white"
+                />
+        </LinearLayout>
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@id/topLayout"
+            android:id="@+id/alarmButton"
+            android:textColor="#FFF04C"
+            android:textSize="50dp"
+            android:text="@string/alarm_icon"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="@drawable/tile_thin_white"
+            android:padding="30dp"
+            android:layout_marginLeft="20dp">
+
+        </Button> <!-- end precip tile -->
+
+
+
+        <!-- bottom linear layout-->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentBottom="true"
+            android:orientation="vertical"
+            android:gravity="right"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="10dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            android:id="@+id/bottomLayout">
+
+            <TextClock
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/date"
+                android:format24Hour="@string/date_format"
+                android:textColor="@android:color/white"
+                android:textSize="50sp"
+                android:gravity="center"
+                android:layout_marginBottom="-15dp"
+                />
+
+            <!-- weather row -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="right"
+                >
 
                 <TextView
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:id="@+id/max"
-                    android:textColor="@android:color/holo_orange_light"
-                    android:textSize="60sp"
-                    android:layout_marginTop="5dp"
+                    android:layout_gravity="center_vertical"
+                    android:id="@+id/temp"
+                    android:textColor="@android:color/white"
+                    android:textSize="75sp"
                     android:text="@string/placeholder"
-                    android:layout_gravity="left"
-                    android:textStyle="bold"
-                    android:layout_marginRight="20dp"
                     />
 
+                <!-- weather icon -->
                 <TextView
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:id="@+id/min"
-                    android:textColor="@android:color/holo_blue_light"
-                    android:textSize="60sp"
-                    android:layout_marginTop="5dp"
+                    android:id="@+id/icon"
+                    android:layout_gravity="center_vertical"
+                    android:paddingRight="15dp"
+                    android:paddingLeft="8dp"
+                    android:textColor="@android:color/white"
+                    android:textSize="90sp"
                     android:text="@string/placeholder"
-                    android:layout_gravity="right"
-                    android:textStyle="bold"
                     />
 
-            </LinearLayout> <!-- end high/low display-->
-        </LinearLayout> <!-- end weather tile -->
+                <!-- high/low display -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_vertical"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:id="@+id/max"
+                        android:textColor="@android:color/holo_orange_light"
+                        android:textSize="40sp"
+                        android:text="@string/placeholder"
+                        android:layout_gravity="left"
+                        android:textStyle="bold"
+                        />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="0dp"
+                        android:layout_weight="1"
+                        android:id="@+id/min"
+                        android:textColor="@android:color/holo_blue_light"
+                        android:textSize="40sp"
+                        android:text="@string/placeholder"
+                        android:layout_gravity="left"
+                        android:textStyle="bold"
+                        />
+                </LinearLayout> <!-- end high/low display-->
+
+            </LinearLayout> <!-- end weather -->
+
+        </LinearLayout> <!-- end lower view -->
 
         <!-- Precip tile-->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:layout_above="@id/bottomLayout"
             android:id="@+id/precipTile"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
+            android:orientation="horizontal"
+            android:gravity="center"
             android:background="@drawable/tile_thin_white"
-            android:layout_marginTop="80dp"
-            android:padding="15dp"
-            android:layout_marginLeft="10dp">
+            android:padding="20dp"
+            android:layout_marginRight="10dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/precipType"
-                android:textSize="70dp"
+                android:textSize="50dp"
                 android:textColor="@android:color/white"/>
 
             <TextView
@@ -161,10 +203,9 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/precipPercent"
                 android:textColor="@android:color/white"
-                android:textSize="50dp"/>
+                android:layout_marginLeft="5dp"
+                android:textSize="40dp"/>
 
         </LinearLayout> <!-- end precip tile -->
-
-    </LinearLayout> <!-- end tile frame -->
-
-</LinearLayout>
+    </RelativeLayout>
+</FrameLayout>
