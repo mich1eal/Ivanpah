@@ -1,6 +1,7 @@
 package com.mich1eal.ivanpah;
 
 import android.content.Context;
+import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -26,13 +27,19 @@ public class MirrorAlarm
     public MirrorAlarm(Context context)
     {
         this.context = context;
+
+        mediaPlayer = new MediaPlayer();
+
+/*
         Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
         if (alarmUri == null)
         {
             alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         }
+        Log.d(TAG, "alarmUri null? :" + Boolean.toString(alarmUri == null));
+
         mediaPlayer = MediaPlayer.create(context.getApplicationContext(), alarmUri);
-        mediaPlayer.setLooping(true);
+        mediaPlayer.setLooping(true);*/
     }
 
     public void setAlarmListener(AlarmListener listener)
@@ -65,12 +72,34 @@ public class MirrorAlarm
     {
         if (timer != null) timer.cancel();
         timer = null;
-        mediaPlayer.stop();
+        if (mediaPlayer.isPlaying())
+        {
+            mediaPlayer.stop();
+        }
         if (listener != null) listener.onCancel();
     }
 
     public void ring()
     {
+        if (mediaPlayer.isPlaying())
+        {
+            mediaPlayer.stop();
+        }
+
+
+        try {
+            mediaPlayer.reset();
+            AssetFileDescriptor afd = context.getAssets().openFd("river.mp3");
+            mediaPlayer.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+            mediaPlayer.setLooping(true);
+
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+
         // Mediaplayer has to be prepared before it can start (took 2 ms when I timed it)
         mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener()
         {

@@ -88,7 +88,7 @@ public class Mirror extends Activity
 
 
     //Format for alarm
-    private static final SimpleDateFormat alarmFormat = new SimpleDateFormat("h:mm a");
+    private static final SimpleDateFormat alarmFormat = new SimpleDateFormat("H:mm");
 
     @Override
     public void onStart()

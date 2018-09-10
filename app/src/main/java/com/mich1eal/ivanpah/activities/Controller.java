@@ -59,6 +59,7 @@ public class Controller extends Activity
         retryButton = (Button) findViewById(R.id.control_retry);
         sendButton = (Button) findViewById(R.id.control_send);
         timePick = (TimePicker) findViewById(R.id.control_time_pick);
+        timePick.setIs24HourView(true);
         cancelButton = (Button) findViewById(R.id.control_cancel);
         settingsButton = (Button) findViewById(R.id.control_settings);
         duoButton = (Button) findViewById(R.id.control_duo);
