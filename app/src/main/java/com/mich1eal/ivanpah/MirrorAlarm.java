@@ -21,7 +21,9 @@ public class MirrorAlarm
     private Context context;
     private AlarmListener listener;
     private Timer timer;
+    private Calendar lastAlarm;
     private Calendar alarmTime;
+    private boolean alarmIsSet = false;
     private static MediaPlayer mediaPlayer;
 
     public MirrorAlarm(Context context)
@@ -29,6 +31,8 @@ public class MirrorAlarm
         this.context = context;
 
         mediaPlayer = new MediaPlayer();
+
+        lastAlarm = Calendar.getInstance();
 
 /*
         Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
@@ -41,6 +45,23 @@ public class MirrorAlarm
         mediaPlayer = MediaPlayer.create(context.getApplicationContext(), alarmUri);
         mediaPlayer.setLooping(true);*/
     }
+
+    public int getLastAlarmHour()
+    {
+        return lastAlarm.get(Calendar.HOUR_OF_DAY);
+    }
+
+    public int getLastAlarmMinute()
+    {
+        return lastAlarm.get(Calendar.MINUTE);
+    }
+
+    public boolean isAlarmSet()
+    {
+        return alarmIsSet;
+    }
+
+
 
     public void setAlarmListener(AlarmListener listener)
     {
@@ -55,6 +76,7 @@ public class MirrorAlarm
         nextAlarm.set(Calendar.MINUTE, minute);
 
         Calendar now = Calendar.getInstance();
+
         this.alarmTime = nextAlarm;
 
         // if alarmTime occurs before now, set its day to tomorrow
@@ -64,11 +86,15 @@ public class MirrorAlarm
             alarmTime.add(Calendar.DATE, 1);
         }
 
+        lastAlarm = alarmTime;
+
         Log.d(TAG, "Alarm set for: " + alarmTime.getTime().toString());
 
         cancel();
         timer = new Timer();
         timer.schedule(getAlarmTask(), alarmTime.getTime());
+
+        alarmIsSet = true;
         if (listener!= null) listener.onAlarmSet(alarmTime);
     }
 
@@ -80,6 +106,8 @@ public class MirrorAlarm
         {
             mediaPlayer.stop();
         }
+
+        alarmIsSet = false;
         if (listener != null) listener.onCancel();
     }
 
@@ -156,6 +184,7 @@ public class MirrorAlarm
         }
         return -1;
     }
+
 
 
     public interface AlarmListener

@@ -3,7 +3,7 @@
              android:layout_width="match_parent"
              android:layout_height="wrap_content"
              android:orientation="vertical"
-             android:background="#000000"
+             android:background="#a4c6d8"
              tools:context=".main">
 
     <RelativeLayout
@@ -19,31 +19,9 @@
             android:layout_alignParentTop="true"
             android:id="@+id/topLayout"
             android:orientation="vertical"
-            android:layout_margin="20dp">
-
-            <!-- Notifications bar-->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/alarmIcon"
-                    android:text="@string/alarm_icon"
-                    android:visibility="gone"
-                    android:textColor="#FFF04C"
-                    android:textSize="50dp"
-                    />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:id="@+id/alarmText"
-                    android:text="@string/alarm_test"
-                    android:visibility="gone"
-                    android:textColor="#FFF04C"
-                    android:textSize="50dp"/>
-            </LinearLayout>
+            android:padding="20dp"
+            android:background="#33000000"
+            >
 
             <!-- clock -->
             <TextClock
@@ -57,33 +35,53 @@
                 android:layout_marginBottom="-30sp"
                 />
 
+            <!--android:visibility="gone"-->
             <TextView
-                android:layout_width="fill_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/messageView"
+                android:textSize="60dp"
                 android:visibility="gone"
-                android:layout_marginTop="50dp"
+                android:layout_marginTop="10dp"
                 android:textColor="@android:color/white"
                 />
         </LinearLayout>
 
-        <Button
+        <!-- Alarm toggle button-->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentLeft="true"
             android:layout_below="@id/topLayout"
-            android:id="@+id/alarmButton"
-            android:textColor="#FFF04C"
-            android:textSize="50dp"
-            android:text="@string/alarm_icon"
+            android:id="@+id/alarmToggle"
             android:orientation="horizontal"
-            android:gravity="center"
-            android:background="@drawable/tile_thin_white"
-            android:padding="30dp"
-            android:layout_marginLeft="20dp">
+            android:gravity="center_vertical"
+            android:background="@drawable/tile_button"
+            android:padding="25dp"
+            android:layout_margin="20dp">
 
-        </Button> <!-- end precip tile -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/alarmIcon"
+                android:textColor="#FFF04C"
+                android:textSize="75dp"
+                android:text="@string/alarm_icon"
+                android:orientation="horizontal"
+                android:gravity="center"
+                />
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/alarmText"
+                android:text="@string/alarm_test"
+                android:textColor="#FFF04C"
+                android:textSize="75dp"
+                android:visibility="gone"
+                />
+
+        </LinearLayout>
 
 
         <!-- bottom linear layout-->
@@ -93,11 +91,12 @@
             android:layout_alignParentRight="true"
             android:layout_alignParentBottom="true"
             android:orientation="vertical"
-            android:gravity="right"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"
-            android:layout_marginRight="20dp"
-            android:layout_marginLeft="20dp"
+            android:gravity="center_horizontal"
+            android:paddingTop="5dp"
+            android:paddingBottom="5dp"
+            android:paddingRight="20dp"
+            android:paddingLeft="20dp"
+            android:background="#33000000"
             android:id="@+id/bottomLayout">
 
             <TextClock
@@ -116,7 +115,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="right"
+                android:gravity="center"
                 >
 
                 <TextView
@@ -188,14 +187,16 @@
             android:orientation="horizontal"
             android:gravity="center"
             android:background="@drawable/tile_thin_white"
-            android:padding="20dp"
-            android:layout_marginRight="10dp">
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp"
+            android:paddingBottom="5dp"
+            android:layout_margin="20dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:id="@+id/precipType"
-                android:textSize="50dp"
+                android:textSize="45dp"
                 android:textColor="@android:color/white"/>
 
             <TextView
@@ -204,7 +205,7 @@
                 android:id="@+id/precipPercent"
                 android:textColor="@android:color/white"
                 android:layout_marginLeft="5dp"
-                android:textSize="40dp"/>
+                android:textSize="30dp"/>
 
         </LinearLayout> <!-- end precip tile -->
     </RelativeLayout>

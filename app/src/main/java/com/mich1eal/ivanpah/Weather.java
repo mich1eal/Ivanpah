@@ -157,6 +157,7 @@ public class Weather
             max = today.getInt("temperatureMax");
             sunRise = today.getLong("sunriseTime");
             sunSet = today.getLong("sunsetTime");
+
         }
         catch (JSONException e)
         {
