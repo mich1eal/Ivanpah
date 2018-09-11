@@ -17,6 +17,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
@@ -41,17 +42,14 @@ public class Mirror extends Activity
 
     private static TextView temp, max, min, icon, precipType, precipPercent, alarmIcon, alarmText, messageDisplay;
     private static LinearLayout precipTile, alarmToggle;
+    private static FrameLayout background;
 
     private static Typeface weatherFont, iconFont, defaultFont;
     private static Weather weather;
     private static MirrorAlarm alarm;
-    private static boolean hasLightSensor;
 
     private static boolean dialogCancelButton = true;
 
-    private static boolean dimEnabled = false;
-
-    private static int brightness;
 
     private final static int fullDarkLevel = 0;
     private final static int fullBrightlevel = 255;
@@ -84,6 +82,8 @@ public class Mirror extends Activity
         alarmToggle = (LinearLayout) findViewById(R.id.alarmToggle);
         alarmIcon = (TextView) findViewById(R.id.alarmIcon);
         alarmText = (TextView) findViewById(R.id.alarmText);
+
+        background = (FrameLayout) findViewById(R.id.background);
 
         // Stuff for handling screen brightness
 
@@ -140,7 +140,6 @@ public class Mirror extends Activity
             {
                 formatRing();
             }
-
         });
 
 
@@ -233,7 +232,6 @@ public class Mirror extends Activity
             messageDisplay.setVisibility(View.VISIBLE);
         }
 
-
         else messageDisplay.setVisibility(View.GONE); //Set temps
 
         String tempStr = weather.getC(weather.getTemp()) + "\u00B0";
@@ -287,19 +285,19 @@ public class Mirror extends Activity
     public void formatDay()
     {
         Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
+        background.setBackground(getResources().getDrawable(R.drawable.shot));
 
     }
 
     public void formatNight()
     {
         Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullDarkLevel);
+        background.setBackgroundColor(000000);
     }
 
     public void formatRing()
     {
         Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
-
-
     }
 
     private void setImmersive()
