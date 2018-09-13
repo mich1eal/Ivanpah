@@ -2,14 +2,9 @@ package com.mich1eal.ivanpah.activities;
 
 import android.app.Activity;
 import android.app.TimePickerDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -22,7 +17,6 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
-import android.widget.Toast;
 
 import com.mich1eal.ivanpah.MirrorAlarm;
 import com.mich1eal.ivanpah.R;
@@ -30,6 +24,7 @@ import com.mich1eal.ivanpah.Weather;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Random;
 
 
 public class Mirror extends Activity
@@ -39,6 +34,16 @@ public class Mirror extends Activity
 
     private final static long weatherDelay = 10 * 60 * 1000; //Time between weather updates in millis
     private final static double minRainDisplay = .1; //Minimum threshold for displaying rain prob
+
+    private static int[] backGroundIDs = {
+            R.drawable.background1,
+            R.drawable.background2,
+            R.drawable.background3,
+            R.drawable.background4,
+            R.drawable.background5};
+
+    private static Random rand = new Random();
+
 
     private boolean isDay = true;
 
@@ -103,16 +108,12 @@ public class Mirror extends Activity
 
         Location permLoc = new Location("Vienna");
         // These for Vienna
-        permLoc.setLatitude(48.2082);
-        permLoc.setLongitude(16.3738);
-
-        //Orlando
-        permLoc.setLatitude(28.5383);
-        permLoc.setLongitude(-81.3792);
+        /*permLoc.setLatitude(48.2082);
+        permLoc.setLongitude(16.3738);*/
 
         //Indy
-        //permLoc.setLatitude(39.7684);
-        //permLoc.setLongitude(-86.1581);
+        permLoc.setLatitude(39.7684);
+        permLoc.setLongitude(-86.1581);
 
         // Initialize data fetchers
         weather = new Weather((LocationManager) getSystemService(LOCATION_SERVICE), this, permLoc);
@@ -289,7 +290,17 @@ public class Mirror extends Activity
         {
             Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
             brightnessToggle.setText(R.string.wi_night_clear);
-            background.setBackgroundColor(Color.CYAN);
+
+            if (backGroundIDs != null && backGroundIDs.length > 0)
+            {
+                int id = backGroundIDs[rand.nextInt(backGroundIDs.length)];
+
+                background.setBackgroundResource(id);
+            }
+            else
+            {
+                background.setBackgroundColor(Color.CYAN);
+            }
         }
         else // set night
         {
@@ -358,7 +369,6 @@ public class Mirror extends Activity
 
         else messageDisplay.setVisibility(View.GONE); //Set temps
     }
-
 
     private void setImmersive()
     {
