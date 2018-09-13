@@ -227,7 +227,6 @@ public class Mirror extends Activity
             }
         });
 
-
         setDay(true);
     }
 
@@ -239,20 +238,13 @@ public class Mirror extends Activity
     }
 
     @Override
-    public void onWeatherDataChange()
+    public void onWeatherDataChange(Weather.WeatherUpdate update)
     {
-        Calendar c = Calendar.getInstance();
+        temp.setText(update.temp);
+        min.setText(update.min);
+        max.setText(update.max);
 
-        String tempStr = weather.getC(weather.getTemp()) + "\u00B0";
-        String minStr = weather.getC(weather.getMin()) + "\u00B0";
-        String maxStr = weather.getC(weather.getMax()) + "\u00B0";
-
-        temp.setText(tempStr);
-        min.setText(minStr);
-        max.setText(maxStr);
-
-        // Set master icon
-        String cond = weather.getCond();
+        String cond = update.icon;
         try
         {
             int id = getResources().getIdentifier(cond, "string", getPackageName());
@@ -268,24 +260,21 @@ public class Mirror extends Activity
 
         // Set precip tile
         //If precip chance is over threshold and its not already raining
-        if (weather.getPrecipChance() >= minRainDisplay && !weather.isPrecip())
+        if (update.precipChance > minRainDisplay && !update.isPrecip)
         {
-            String precipString = weather.getPrecipType();
-
-            //convert float to int%
-            String str = String.valueOf((int) (weather.getPrecipChance() * 100)) + '%';
+            String str = String.valueOf((int) (update.precipChance * 100)) + '%';
             precipPercent.setText(str);
 
             try
             {
-                int id = getResources().getIdentifier(precipString, "string", getPackageName());
+                int id = getResources().getIdentifier(update.precipIcon, "string", getPackageName());
                 precipType.setText(getResources().getString(id));
 
-                Log.d(TAG, "Precip type: " + precipString + ". Precip prob: " + str);
+                Log.d(TAG, "Precip type: " + update.precipIcon + ". Precip prob: " + update.precipChance);
                 precipTile.setVisibility(View.VISIBLE);
             } catch (Exception e)
             {
-                Log.d("MAIN", "No icon found for String " + precipString);
+                Log.d("MAIN", "No icon found for String " + update.precipIcon);
                 precipTile.setVisibility(View.GONE);
             }
         }

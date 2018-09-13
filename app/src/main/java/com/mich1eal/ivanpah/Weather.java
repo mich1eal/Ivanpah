@@ -15,7 +15,9 @@ public class Weather
         extends JSONGetter
 {
     private static final String TAG = "WEATHER";
+
     private static final String APIKey = "310a6b004645167adf0d695576d45819";
+    private static final String UNITS = "si"; //"us" for imperial
     private LocationManager lm = null;
     private WeatherUpdateListener listener;
 
@@ -31,8 +33,6 @@ public class Weather
     private double precipChance;
     private String precipType;
     private boolean isPrecip;
-    private long sunRise = -1;
-    private long sunSet = -1;
 
     private Weather(){}
 
@@ -44,27 +44,19 @@ public class Weather
         this.lastLoc = permLoc;
     }
 
-    public int getTemp(){return temp;}
-    public int getMin(){return min;}
-    public int getMax(){return max;}
-    public int getC(int F)
-    {
-        return (int) ((F - 32) * .5556);
-    }
-    public String getCond(){return cond;}
-    public double getPrecipChance(){return precipChance;}
-    public String getPrecipType(){return precipType;}
-    public boolean hasValues(){return hasValues;}
-    public boolean isPrecip(){return isPrecip;}
-    public long getSunrise(){return sunRise;}
-    public long getSunSet(){return sunSet;}
-
     @Override
     protected void onComplete(JSONObject json)
     {
         lastJSON = json;
         updateData();
-        listener.onWeatherDataChange();
+
+        String tempStr = temp + "\u00B0";
+        String minStr = min + "\u00B0";
+        String maxStr = max + "\u00B0";
+
+        WeatherUpdate update = new WeatherUpdate(maxStr, minStr, tempStr, cond, precipType, precipChance, isPrecip);
+
+        listener.onWeatherDataChange(update);
     }
 
     @Override
@@ -93,7 +85,8 @@ public class Weather
         String apiurl = "https://api.darksky.net/forecast/" +
                 APIKey + '/' +
                 lastLoc.getLatitude() + ',' +
-                lastLoc.getLongitude();
+                lastLoc.getLongitude() +
+                '?' + "units=" + UNITS;
 
         super.getJSON(apiurl);
     }
@@ -155,8 +148,6 @@ public class Weather
             JSONObject today = lastJSON.getJSONObject("daily").getJSONArray("data").getJSONObject(0);
             min = today.getInt("temperatureMin");
             max = today.getInt("temperatureMax");
-            sunRise = today.getLong("sunriseTime");
-            sunSet = today.getLong("sunsetTime");
 
         }
         catch (JSONException e)
@@ -177,36 +168,34 @@ public class Weather
         {
             Log.e(TAG, e.getMessage());
         }
-
-
     }
 
     public interface WeatherUpdateListener
     {
-        public void onWeatherDataChange();
+        public void onWeatherDataChange(WeatherUpdate update);
     }
-}
 
-class WeatherUpdate
-{
-    public String max;
-    public String min;
-    public String temp;
-    public String icon;
-    public String precipIcon;
-    public String precipChance;
-
-    public WeatherUpdate(String max, String min, String temp, String icon, String precipIcon, String precipChance)
+    public class WeatherUpdate
     {
-        this.max = max;
-        this.min = min;
-        this.temp = temp;
-        this.icon = icon;
-        this.precipIcon = precipIcon;
-        this.precipChance = precipChance;
+        public String max;
+        public String min;
+        public String temp;
+        public String icon;
+        public String precipIcon;
+        public double precipChance;
+        public boolean isPrecip;
+
+        public WeatherUpdate(String max, String min, String temp, String icon, String precipIcon, double precipChance, boolean isPrecip)
+        {
+            this.max = max;
+            this.min = min;
+            this.temp = temp;
+            this.icon = icon;
+            this.precipIcon = precipIcon;
+            this.precipChance = precipChance;
+            this.isPrecip = isPrecip;
+        }
     }
-
-
 
 }
 
