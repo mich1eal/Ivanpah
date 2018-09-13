@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -39,10 +40,13 @@ public class Mirror extends Activity
     private final static long weatherDelay = 10 * 60 * 1000; //Time between weather updates in millis
     private final static double minRainDisplay = .1; //Minimum threshold for displaying rain prob
 
+    private boolean isDay = true;
+
 
     private static TextView temp, max, min, icon, precipType, precipPercent, alarmIcon, alarmText, messageDisplay;
-    private static LinearLayout precipTile, alarmToggle;
+    private static LinearLayout precipTile, alarmToggle, snoozeLayout;
     private static FrameLayout background;
+    private static Button brightnessToggle, snoozeSnooze, snoozeCancel;
 
     private static Typeface weatherFont, iconFont, defaultFont;
     private static Weather weather;
@@ -83,6 +87,12 @@ public class Mirror extends Activity
         alarmIcon = (TextView) findViewById(R.id.alarmIcon);
         alarmText = (TextView) findViewById(R.id.alarmText);
 
+        snoozeSnooze = (Button) findViewById(R.id.snoozeSnooze);
+        snoozeCancel = (Button) findViewById(R.id.snoozeCancel);
+        snoozeLayout = (LinearLayout) findViewById(R.id.snoozeLayout);
+
+        brightnessToggle = (Button) findViewById(R.id.brightnessToggle);
+
         background = (FrameLayout) findViewById(R.id.background);
 
         // Stuff for handling screen brightness
@@ -96,12 +106,17 @@ public class Mirror extends Activity
         permLoc.setLatitude(48.2082);
         permLoc.setLongitude(16.3738);
 
+        //Orlando
+        permLoc.setLatitude(28.5383);
+        permLoc.setLongitude(-81.3792);
+
         //Indy
         //permLoc.setLatitude(39.7684);
         //permLoc.setLongitude(-86.1581);
 
         // Initialize data fetchers
         weather = new Weather((LocationManager) getSystemService(LOCATION_SERVICE), this, permLoc);
+        weather.setAutoUpdate(new Handler(), weatherDelay);
 
         // Initialize fonts
         defaultFont = icon.getTypeface();
@@ -111,10 +126,7 @@ public class Mirror extends Activity
         // Initialize constant fonts
         precipType.setTypeface(weatherFont);
         alarmIcon.setTypeface(iconFont);
-
-        weather.setAutoUpdate(new Handler(), weatherDelay);
-
-        formatDay();
+        brightnessToggle.setTypeface(weatherFont);
 
         // Initialize MirrorAlarm
         alarm = new MirrorAlarm(this);
@@ -125,23 +137,31 @@ public class Mirror extends Activity
             {
                 alarmText.setText(alarmFormat.format(time.getTime()));
                 alarmText.setVisibility(View.VISIBLE);
-                formatNight();
+                setDay(false);
             }
 
             @Override
             public void onCancel()
             {
                 alarmText.setVisibility(View.GONE);
-                formatDay();
+                setDay(true);
             }
 
             @Override
             public void onRing()
             {
-                formatRing();
+                setRing(true);
             }
         });
 
+        // set up brightness toggle button
+        brightnessToggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                setDay(!isDay); //toggle brightness
+            }
+        });
 
         // set up alarm button
         alarmToggle.setOnClickListener(new View.OnClickListener(){
@@ -187,6 +207,28 @@ public class Mirror extends Activity
             }
         }
         );
+
+        //set up Snooze buttons
+        snoozeSnooze.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                alarm.snooze();
+                setRing(false);
+            }
+        });
+
+        snoozeCancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                alarm.cancel();
+                setRing(false);
+            }
+        });
+
+
+        setDay(true);
     }
 
     @Override
@@ -200,39 +242,6 @@ public class Mirror extends Activity
     public void onWeatherDataChange()
     {
         Calendar c = Calendar.getInstance();
-
-        int date = c.get(Calendar.DAY_OF_MONTH);
-        int month = c.get(Calendar.MONTH);
-        int day = c.get(Calendar.DAY_OF_WEEK);
-        int dayCount = c.get(Calendar.DAY_OF_WEEK_IN_MONTH);
-
-        // Birthday
-        if (month == Calendar.SEPTEMBER && date == 10)
-        {
-            messageDisplay.setText("HAPPY BIRTHDAY TRIXI!!");
-            messageDisplay.setVisibility(View.VISIBLE);
-        }
-        // Anniversary
-        else if (month == Calendar.MAY && date == 13)
-        {
-            messageDisplay.setText("Shönen Jahrestag!!");
-            messageDisplay.setVisibility(View.VISIBLE);
-        }
-        //Nicholas Day
-        else if (month == Calendar.DECEMBER && date == 6)
-        {
-            messageDisplay.setText("Frohen Nikolaus!!");
-            messageDisplay.setVisibility(View.VISIBLE);
-        }
-
-        //Random
-        else if (date == 17 && month % 2 == 0)
-        {
-            messageDisplay.setText("ICH LIEBE DICH!");
-            messageDisplay.setVisibility(View.VISIBLE);
-        }
-
-        else messageDisplay.setVisibility(View.GONE); //Set temps
 
         String tempStr = weather.getC(weather.getTemp()) + "\u00B0";
         String minStr = weather.getC(weather.getMin()) + "\u00B0";
@@ -271,6 +280,8 @@ public class Mirror extends Activity
             {
                 int id = getResources().getIdentifier(precipString, "string", getPackageName());
                 precipType.setText(getResources().getString(id));
+
+                Log.d(TAG, "Precip type: " + precipString + ". Precip prob: " + str);
                 precipTile.setVisibility(View.VISIBLE);
             } catch (Exception e)
             {
@@ -281,24 +292,84 @@ public class Mirror extends Activity
         else precipTile.setVisibility(View.GONE);
     }
 
-
-    public void formatDay()
+    //format either to day or night mode
+    private void setDay(boolean day)
     {
-        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
-        background.setBackground(getResources().getDrawable(R.drawable.shot));
-
+        isDay = day;
+        if (day) //set day
+        {
+            Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
+            brightnessToggle.setText(R.string.wi_night_clear);
+            background.setBackgroundColor(Color.CYAN);
+        }
+        else // set night
+        {
+            Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullDarkLevel);
+            brightnessToggle.setText(R.string.wi_day_sunny);
+            background.setBackgroundColor(0x000000);
+        }
     }
 
-    public void formatNight()
+    private void setRing(boolean isRinging)
     {
-        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullDarkLevel);
-        background.setBackgroundColor(000000);
+        if (isRinging)
+        {
+            alarmToggle.setVisibility(View.GONE);
+            snoozeLayout.setVisibility(View.VISIBLE);
+            messageDisplay.setVisibility(View.GONE);
+
+            if (!isDay)
+            {
+                Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
+            }
+        }
+        else
+        {
+            alarmToggle.setVisibility(View.VISIBLE);
+            snoozeLayout.setVisibility(View.GONE);
+            setMessageDisplay();
+
+            //reset brightness etc to before ring started
+            setDay(isDay);
+        }
     }
 
-    public void formatRing()
+    private void setMessageDisplay()
     {
-        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
+        Calendar today = Calendar.getInstance();
+
+        int date = today.get(Calendar.DAY_OF_MONTH);
+        int month = today.get(Calendar.MONTH);
+
+        // Birthday
+        if (month == Calendar.SEPTEMBER && date == 10)
+        {
+            messageDisplay.setText("HAPPY BIRTHDAY TRIXI!!");
+            messageDisplay.setVisibility(View.VISIBLE);
+        }
+        // Anniversary
+        else if (month == Calendar.MAY && date == 13)
+        {
+            messageDisplay.setText("Shönen Jahrestag!!");
+            messageDisplay.setVisibility(View.VISIBLE);
+        }
+        //Nicholas Day
+        else if (month == Calendar.DECEMBER && date == 6)
+        {
+            messageDisplay.setText("Frohen Nikolaus!!");
+            messageDisplay.setVisibility(View.VISIBLE);
+        }
+
+        //Random
+        else if (date == 17 && month % 2 == 0)
+        {
+            messageDisplay.setText("ICH LIEBE DICH!");
+            messageDisplay.setVisibility(View.VISIBLE);
+        }
+
+        else messageDisplay.setVisibility(View.GONE); //Set temps
     }
+
 
     private void setImmersive()
     {
@@ -310,7 +381,6 @@ public class Mirror extends Activity
                         | View.SYSTEM_UI_FLAG_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
-
 
     @Override
     public void onDestroy()

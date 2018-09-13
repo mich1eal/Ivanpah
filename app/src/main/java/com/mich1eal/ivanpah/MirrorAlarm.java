@@ -18,11 +18,13 @@ import java.util.TimerTask;
 public class MirrorAlarm
 {
     private static final String TAG = MirrorAlarm.class.getSimpleName();
+    private static final int SNOOZE_MINS = 10;
+
     private Context context;
     private AlarmListener listener;
     private Timer timer;
     private Calendar lastAlarm;
-    private Calendar alarmTime;
+    //private Calendar alarmTime;
     private boolean alarmIsSet = false;
     private static MediaPlayer mediaPlayer;
 
@@ -69,33 +71,43 @@ public class MirrorAlarm
     }
 
     // Sets alarm to ring at the given calendar date. Overwrites any alarms currently in progress
+
     public void setAlarm(int hour, int minute)
     {
         Calendar nextAlarm = Calendar.getInstance();
         nextAlarm.set(Calendar.HOUR_OF_DAY, hour);
         nextAlarm.set(Calendar.MINUTE, minute);
+        setAlarm(nextAlarm);
+    }
 
+
+    private void setAlarm(Calendar setTime)
+    {
+
+        //Clone since calendars are mutable and we need to modify it
+        Calendar nextAlarm = (Calendar) setTime.clone();
         Calendar now = Calendar.getInstance();
 
-        this.alarmTime = nextAlarm;
+        //round off time to 0 seconds, so rings right when changes
+        nextAlarm.set(Calendar.SECOND, 0);
 
         // if alarmTime occurs before now, set its day to tomorrow
-        if (alarmTime.before(now))
+        if (nextAlarm.before(now))
         {
             // if the alarm time already happened, make it go off tomorrow instead
-            alarmTime.add(Calendar.DATE, 1);
+            nextAlarm.add(Calendar.DATE, 1);
         }
 
-        lastAlarm = alarmTime;
+        lastAlarm = nextAlarm;
 
-        Log.d(TAG, "Alarm set for: " + alarmTime.getTime().toString());
+        Log.d(TAG, "Alarm set for: " + nextAlarm.getTime().toString());
 
         cancel();
         timer = new Timer();
-        timer.schedule(getAlarmTask(), alarmTime.getTime());
+        timer.schedule(getAlarmTask(), nextAlarm.getTime());
 
         alarmIsSet = true;
-        if (listener!= null) listener.onAlarmSet(alarmTime);
+        if (listener!= null) listener.onAlarmSet(nextAlarm);
     }
 
     public void cancel()
@@ -153,6 +165,14 @@ public class MirrorAlarm
         }
     }
 
+    public void snooze()
+    {
+        Calendar snooze = Calendar.getInstance();
+        snooze.add(Calendar.MINUTE, SNOOZE_MINS);
+        setAlarm(snooze);
+    }
+
+
     // Method for neatness, returns a timertask that calls ring when completed
     private TimerTask getAlarmTask ()
     {
@@ -175,17 +195,6 @@ public class MirrorAlarm
             }
         };
     }
-
-    public long timeToAlarm()
-    {
-        if (timer != null)
-        {
-            return alarmTime.getTimeInMillis() - Calendar.getInstance().getTimeInMillis();
-        }
-        return -1;
-    }
-
-
 
     public interface AlarmListener
     {

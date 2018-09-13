@@ -2,18 +2,23 @@
 
     <string name="app_name">Ivanpah</string>
 
-    <string name="time_format">H:mm</string>
+    <string name="time_format">HH:mm</string>
     <string name="date_format">MMMM d</string>
 
     <string name="placeholder">-</string>
 
 
     <string name="alarm_icon">T</string>
-    <string name="alarm_test">-</string>
 
-    <!-- Strings for memory !-->
-    <string name="config">config</string>
-    <string name="prefs">SHARED_PREF_1</string>
+    <string name="snooze_snooze">Snooze</string>
+    <string name="snooze_cancel">Cancel</string>
+
+    <string name="toggle_to_bright">1</string>
+    <string name="toggle_to_dark">6</string>
+
+
+
+
 
     <!-- Weather icons used by weather font !-->
     <string name="wi_day_sunny">&#xf00d;</string>

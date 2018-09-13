@@ -186,3 +186,27 @@ public class Weather
         public void onWeatherDataChange();
     }
 }
+
+class WeatherUpdate
+{
+    public String max;
+    public String min;
+    public String temp;
+    public String icon;
+    public String precipIcon;
+    public String precipChance;
+
+    public WeatherUpdate(String max, String min, String temp, String icon, String precipIcon, String precipChance)
+    {
+        this.max = max;
+        this.min = min;
+        this.temp = temp;
+        this.icon = icon;
+        this.precipIcon = precipIcon;
+        this.precipChance = precipChance;
+    }
+
+
+
+}
+
