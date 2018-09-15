@@ -11,7 +11,7 @@
     <string name="alarm_icon">T</string>
 
     <string name="snooze_snooze">Snooze</string>
-    <string name="snooze_cancel">Cancel</string>
+    <string name="snooze_cancel">End</string>
 
     <string name="toggle_to_bright">1</string>
     <string name="toggle_to_dark">6</string>

@@ -33,8 +33,21 @@ public class Mirror extends Activity
     private static final String TAG = "MIRROR";
 
     private final static long weatherDelay = 10 * 60 * 1000; //Time between weather updates in millis
-    private final static double minRainDisplay = .1; //Minimum threshold for displaying rain prob
+    private final static double minRainDisplay = .01; //Minimum threshold for displaying rain prob
 
+    //Dimming settings
+    private final static int fullDarkLevel = 0;
+    private final static int fullBrightlevel = 255;
+
+    //Format for alarm
+    private static final SimpleDateFormat alarmFormat = new SimpleDateFormat("H:mm");
+
+
+    //Variables for background
+    private static Calendar lastDay; // used for determining when its a new day
+    private static Random rand = new Random();
+
+    private static int currentBackground = -1;
     private static int[] backGroundIDs = {
             R.drawable.background1,
             R.drawable.background2,
@@ -42,29 +55,23 @@ public class Mirror extends Activity
             R.drawable.background4,
             R.drawable.background5};
 
-    private static Random rand = new Random();
-
-
+    // Tracks whether display is in day or night mode
     private boolean isDay = true;
 
-
+    //Views
     private static TextView temp, max, min, icon, precipType, precipPercent, alarmIcon, alarmText, messageDisplay;
     private static LinearLayout precipTile, alarmToggle, snoozeLayout;
     private static FrameLayout background;
     private static Button brightnessToggle, snoozeSnooze, snoozeCancel;
 
     private static Typeface weatherFont, iconFont, defaultFont;
+
+    // Controllers
     private static Weather weather;
     private static MirrorAlarm alarm;
 
+    //Used for determining whether alarm diaglog was cancelled or closed
     private static boolean dialogCancelButton = true;
-
-
-    private final static int fullDarkLevel = 0;
-    private final static int fullBrightlevel = 255;
-
-    //Format for alarm
-    private static final SimpleDateFormat alarmFormat = new SimpleDateFormat("H:mm");
 
     @Override
     public void onStart()
@@ -108,12 +115,8 @@ public class Mirror extends Activity
 
         Location permLoc = new Location("Vienna");
         // These for Vienna
-        /*permLoc.setLatitude(48.2082);
-        permLoc.setLongitude(16.3738);*/
-
-        //Indy
-        permLoc.setLatitude(39.7684);
-        permLoc.setLongitude(-86.1581);
+        permLoc.setLatitude(48.2082);
+        permLoc.setLongitude(16.3738);
 
         // Initialize data fetchers
         weather = new Weather((LocationManager) getSystemService(LOCATION_SERVICE), this, permLoc);
@@ -280,6 +283,9 @@ public class Mirror extends Activity
             }
         }
         else precipTile.setVisibility(View.GONE);
+
+        //Hijacking this method which gets called every 10 minutes.
+        updateDaily();
     }
 
     //format either to day or night mode
@@ -290,23 +296,13 @@ public class Mirror extends Activity
         {
             Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
             brightnessToggle.setText(R.string.wi_night_clear);
-
-            if (backGroundIDs != null && backGroundIDs.length > 0)
-            {
-                int id = backGroundIDs[rand.nextInt(backGroundIDs.length)];
-
-                background.setBackgroundResource(id);
-            }
-            else
-            {
-                background.setBackgroundColor(Color.CYAN);
-            }
+            setBackgroundImage();
         }
         else // set night
         {
             Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullDarkLevel);
             brightnessToggle.setText(R.string.wi_day_sunny);
-            background.setBackgroundColor(0x000000);
+            background.setBackgroundColor(Color.BLACK);
         }
     }
 
@@ -334,10 +330,53 @@ public class Mirror extends Activity
         }
     }
 
+    private void updateDaily()
+    {
+        final Calendar today = Calendar.getInstance();
+        int day = Calendar.DAY_OF_YEAR;
+
+        // if today hasn't been set yet, or it's a different day than before, dailyUpdate
+        if (lastDay == null || lastDay.get(day) != today.get(day))
+        {
+            onDailyUpdate();
+            lastDay = today;
+        }
+
+        final Calendar now = Calendar.getInstance();
+    }
+
+    //Called once per day
+    private void onDailyUpdate()
+    {
+        setMessageDisplay();
+        updateBackgroundImage();
+        setBackgroundImage();
+    }
+
+    private void updateBackgroundImage()
+    {
+        if (backGroundIDs != null && backGroundIDs.length > 0)
+        {
+            currentBackground = backGroundIDs[rand.nextInt(backGroundIDs.length)];
+        }
+    }
+
+    private void setBackgroundImage()
+    {
+        if (currentBackground > 1)
+        {
+            background.setBackgroundResource(currentBackground);
+        }
+        else
+        {
+            background.setBackgroundColor(Color.CYAN);
+        }
+
+    }
+
     private void setMessageDisplay()
     {
         Calendar today = Calendar.getInstance();
-
         int date = today.get(Calendar.DAY_OF_MONTH);
         int month = today.get(Calendar.MONTH);
 
@@ -367,7 +406,7 @@ public class Mirror extends Activity
             messageDisplay.setVisibility(View.VISIBLE);
         }
 
-        else messageDisplay.setVisibility(View.GONE); //Set temps
+        else messageDisplay.setVisibility(View.GONE);
     }
 
     private void setImmersive()
