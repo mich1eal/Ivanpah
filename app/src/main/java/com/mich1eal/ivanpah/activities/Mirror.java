@@ -33,7 +33,7 @@ public class Mirror extends Activity
     private static final String TAG = "MIRROR";
 
     private final static long weatherDelay = 10 * 60 * 1000; //Time between weather updates in millis
-    private final static double minRainDisplay = .01; //Minimum threshold for displaying rain prob
+    private final static double minRainDisplay = .20; //Minimum threshold for displaying rain prob
 
     //Dimming settings
     private final static int fullDarkLevel = 0;
@@ -49,11 +49,28 @@ public class Mirror extends Activity
 
     private static int currentBackground = -1;
     private static int[] backGroundIDs = {
-            R.drawable.background1,
-            R.drawable.background2,
-            R.drawable.background3,
-            R.drawable.background4,
-            R.drawable.background5};
+            R.drawable.background_1,
+            R.drawable.background_2,
+            R.drawable.background_3,
+            R.drawable.background_4,
+            R.drawable.background_5,
+            R.drawable.background_6,
+            R.drawable.background_7,
+            R.drawable.background_8,
+            R.drawable.background_9,
+            R.drawable.background_10,
+            R.drawable.background_11,
+            R.drawable.background_12,
+            R.drawable.background_13,
+            R.drawable.background_14,
+            R.drawable.background_15,
+            R.drawable.background_16,
+            R.drawable.background_17,
+            R.drawable.background_18,
+            R.drawable.background_19,
+            R.drawable.background_20,
+            R.drawable.background_21,
+    };
 
     // Tracks whether display is in day or night mode
     private boolean isDay = true;
@@ -350,7 +367,7 @@ public class Mirror extends Activity
     {
         setMessageDisplay();
         updateBackgroundImage();
-        setBackgroundImage();
+        if (isDay) setBackgroundImage();
     }
 
     private void updateBackgroundImage()
@@ -371,7 +388,6 @@ public class Mirror extends Activity
         {
             background.setBackgroundColor(Color.CYAN);
         }
-
     }
 
     private void setMessageDisplay()
