@@ -233,18 +233,6 @@
             android:visibility="gone">
 
             <Button
-                android:id="@+id/snoozeSnooze"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_margin="10dp"
-                android:layout_weight="1"
-                android:background="@drawable/tile_button"
-                android:text="@string/snooze_snooze"
-                android:textAllCaps="false"
-                android:textColor="@android:color/holo_orange_light"
-                android:textSize="90dp" />
-
-            <Button
                 android:id="@+id/snoozeCancel"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
@@ -255,6 +243,18 @@
                 android:textAllCaps="false"
                 android:textColor="@android:color/holo_purple"
                 android:textSize="90dp" />
+
+            <Button
+                android:id="@+id/snoozeSnooze"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_margin="10dp"
+                android:layout_weight="1"
+                android:background="@drawable/tile_button"
+                android:text="@string/snooze_snooze"
+                android:textAllCaps="false"
+                android:textColor="@android:color/holo_orange_light"
+                android:textSize="90dp" /> />
 
         </LinearLayout>
 
