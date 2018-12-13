@@ -35,6 +35,8 @@ public class Mirror extends Activity
     private final static long weatherDelay = 10 * 60 * 1000; //Time between weather updates in millis
     private final static double minRainDisplay = .20; //Minimum threshold for displaying rain prob
 
+    private final static int defaultMinsToHue = 20;
+
     //Dimming settings
     private final static int fullDarkLevel = 0;
     private final static int fullBrightlevel = 255;
@@ -156,6 +158,7 @@ public class Mirror extends Activity
             @Override
             public void onAlarmSet(Calendar time)
             {
+                alarm.setHue(false);
                 alarmText.setText(alarmFormat.format(time.getTime()));
                 alarmText.setVisibility(View.VISIBLE);
                 setDay(false);
@@ -196,7 +199,7 @@ public class Mirror extends Activity
                 timePicker = new TimePickerDialog(Mirror.this, new TimePickerDialog.OnTimeSetListener() {
                     @Override
                     public void onTimeSet(TimePicker timePicker, int selectedHour, int selectedMinute) {
-                        alarm.setAlarm(selectedHour, selectedMinute);
+                        alarm.setAlarm(selectedHour, selectedMinute, defaultMinsToHue);
                         dialogCancelButton = false; //if this is called, was not cancelled with cancel button
                         Log.d(TAG, "onTimeSet()");
                     }
@@ -244,6 +247,7 @@ public class Mirror extends Activity
             public void onClick(View v)
             {
                 alarm.cancel();
+                alarm.setHue(false);
                 setRing(false);
             }
         });

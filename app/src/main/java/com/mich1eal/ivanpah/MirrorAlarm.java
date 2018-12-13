@@ -3,11 +3,13 @@ package com.mich1eal.ivanpah;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
-import android.media.RingtoneManager;
-import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
 
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Calendar;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -19,6 +21,12 @@ public class MirrorAlarm
 {
     private static final String TAG = MirrorAlarm.class.getSimpleName();
     private static final int SNOOZE_MINS = 10;
+
+    private static final String HUE_URL_BASE = "http://";
+    private static final String HUE_URL_END1 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/3/state";
+    private static final String HUE_IP = "192.168.0.10";
+
+    private static final long HUE_FREQ_MILLI = 10000; //update hue every 10 secs
 
     private Context context;
     private AlarmListener listener;
@@ -63,8 +71,6 @@ public class MirrorAlarm
         return alarmIsSet;
     }
 
-
-
     public void setAlarmListener(AlarmListener listener)
     {
         this.listener = listener;
@@ -72,21 +78,14 @@ public class MirrorAlarm
 
     // Sets alarm to ring at the given calendar date. Overwrites any alarms currently in progress
 
-    public void setAlarm(int hour, int minute)
+    public void setAlarm(int hour, int minute, int minutesToHue)
     {
+        Calendar now = Calendar.getInstance();
+
+        //New calendar since calendars are mutable
         Calendar nextAlarm = Calendar.getInstance();
         nextAlarm.set(Calendar.HOUR_OF_DAY, hour);
         nextAlarm.set(Calendar.MINUTE, minute);
-        setAlarm(nextAlarm);
-    }
-
-
-    private void setAlarm(Calendar setTime)
-    {
-
-        //Clone since calendars are mutable and we need to modify it
-        Calendar nextAlarm = (Calendar) setTime.clone();
-        Calendar now = Calendar.getInstance();
 
         //round off time to 0 seconds, so rings right when changes
         nextAlarm.set(Calendar.SECOND, 0);
@@ -97,6 +96,22 @@ public class MirrorAlarm
             // if the alarm time already happened, make it go off tomorrow instead
             nextAlarm.add(Calendar.DATE, 1);
         }
+
+        //Set alarm
+        setAlarm(nextAlarm);
+
+        //Set hue fade in
+        if (minutesToHue > 0)
+        {
+            Calendar hueAlarm = (Calendar) nextAlarm.clone(); //Clone since calendars are mutable
+            hueAlarm.add(Calendar.MINUTE, 0 - minutesToHue); //Subtract mins for hue
+            setHue(hueAlarm, minutesToHue);
+        }
+
+    }
+
+    private void setAlarm(Calendar nextAlarm)
+    {
 
         lastAlarm = nextAlarm;
 
@@ -123,7 +138,7 @@ public class MirrorAlarm
         if (listener != null) listener.onCancel();
     }
 
-    public void ring()
+    private void ring()
     {
         if (mediaPlayer.isPlaying())
         {
@@ -165,11 +180,70 @@ public class MirrorAlarm
         }
     }
 
+
+    private void setHue(final Calendar hueTime, int minutesToHue)
+    {
+        Log.d(TAG, "Setting hue to start at: " + hueTime.getTime().toString());
+        //milliseconds hue should be active
+        final long hueTimeWindow = minutesToHue * 60 * 1000;
+
+        Timer timer = new Timer();
+        TimerTask task = new TimerTask()
+        {
+            //Each time run() is called, hue is set to correct brightness, th
+            public void run()
+            {
+                Calendar now = Calendar.getInstance();
+
+                // If alarm is set, and it hasn't rung yet
+                if (isAlarmSet() && lastAlarm.after(now))
+                {
+                    long timeLeft = lastAlarm.getTimeInMillis() - now.getTimeInMillis();
+                    updateHue(timeLeft, hueTimeWindow);
+                }
+                else
+                {
+                    Log.d(TAG, "Hue cancelled");
+                    cancel();
+                }
+            }
+        };
+
+        timer.schedule(task, hueTime.getTime(), HUE_FREQ_MILLI);
+    }
+
+    private void updateHue(long timeLeft, long timeWindow)
+    {
+        if (timeLeft > 0)
+        {
+            int bright = (int) ((timeWindow - timeLeft) * 255 / timeWindow);
+
+            Log.d(TAG, (timeLeft / 1000) + " secs to ring, setting bright to " + bright);
+
+            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1,
+                    "{\"on\":true, \"bri\":" + bright + "}");
+        }
+
+    }
+
+    public void setHue(boolean on)
+    {
+        if (on)
+        {
+            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1, "{\"on\":true, \"bri\":" + 255 + "}");
+        }
+        else
+        {
+            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1, "{\"on\":false}");
+        }
+
+    }
+
+
     public void snooze()
     {
-        Calendar snooze = Calendar.getInstance();
-        snooze.add(Calendar.MINUTE, SNOOZE_MINS);
-        setAlarm(snooze);
+        Calendar now = Calendar.getInstance();
+        setAlarm(now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE) + SNOOZE_MINS, SNOOZE_MINS); //no hue for snoozing
     }
 
 
@@ -201,5 +275,37 @@ public class MirrorAlarm
         public void onAlarmSet(Calendar time);
         public void onCancel();
         public void onRing();
+    }
+
+
+
+
+    private static class URLCaller extends AsyncTask<String, Void, Void> {
+        @Override
+        protected Void doInBackground(String... params) {
+            HttpURLConnection con = null;
+            URL url = null;
+            OutputStreamWriter out = null;
+
+            try {
+                url = new URL(params[0]);
+
+                con = (HttpURLConnection) url.openConnection();
+                con.setDoOutput(true);
+                con.setRequestMethod("PUT");
+                out = new OutputStreamWriter(con.getOutputStream());
+                Log.d(TAG, "Writing output: " + params[1]);
+                out.write(params[1]);
+                out.close();
+
+                con.getResponseMessage(); //This is necessary to actually make the call I guess?
+                Log.d(TAG, "Response code from hue = " + con.getResponseCode());
+                Log.d(TAG, "Response message from hue = " + con.getResponseMessage());
+            } catch (Exception e) {
+                Log.e(TAG, e.getMessage());
+            }
+
+            return null;
+        }
     }
 }
