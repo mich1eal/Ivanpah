@@ -15,6 +15,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
@@ -80,8 +81,9 @@ public class Mirror extends Activity
     //Views
     private static TextView temp, max, min, icon, precipType, precipPercent, alarmIcon, alarmText, messageDisplay;
     private static LinearLayout precipTile, alarmToggle, snoozeLayout;
-    private static FrameLayout background;
-    private static Button brightnessToggle, snoozeSnooze, snoozeCancel;
+    private static FrameLayout background, hueDimmerFrame;
+    private static Button brightnessToggle, snoozeSnooze, snoozeCancel, hueToggle;
+    private static SeekBar hueDimmer;
 
     private static Typeface weatherFont, iconFont, defaultFont;
 
@@ -123,8 +125,12 @@ public class Mirror extends Activity
         snoozeLayout = (LinearLayout) findViewById(R.id.snoozeLayout);
 
         brightnessToggle = (Button) findViewById(R.id.brightnessToggle);
+        hueToggle = (Button) findViewById(R.id.hueToggle);
 
         background = (FrameLayout) findViewById(R.id.background);
+        hueDimmerFrame = (FrameLayout) findViewById(R.id.hueDimmerFrame);
+
+        hueDimmer = (SeekBar) findViewById(R.id.hueDimmer);
 
         // Stuff for handling screen brightness
 
@@ -247,10 +253,57 @@ public class Mirror extends Activity
             public void onClick(View v)
             {
                 alarm.cancel();
-                alarm.setHue(false);
                 setRing(false);
             }
         });
+
+
+        //set up hueDimmer
+        hueToggle.setTypeface(iconFont);
+        hueToggle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                double bright = ((double) hueDimmer.getProgress()) / hueDimmer.getMax();
+                if (bright == 0)
+                {
+                    hueDimmer.setProgress(100);
+                    alarm.setHue(true);
+                }
+                else
+                {
+                    alarm.toggleHue(bright);
+                }
+            }
+        });
+
+        hueDimmer.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener()
+        {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar)
+            {
+                double bright = ((double) seekBar.getProgress()) / seekBar.getMax();
+                Log.d(TAG, "Setting brightness to: " + bright);
+                alarm.setHue(bright);
+            }
+        });
+
+
+
+
+
+
+        //hueDimmer.setMinimumHeight(hueDimmerFrame.getHeight());
 
         setDay(true);
     }
@@ -334,6 +387,7 @@ public class Mirror extends Activity
             alarmToggle.setVisibility(View.GONE);
             snoozeLayout.setVisibility(View.VISIBLE);
             messageDisplay.setVisibility(View.GONE);
+            hueDimmer.setVisibility(View.GONE);
 
             if (!isDay)
             {
@@ -344,6 +398,8 @@ public class Mirror extends Activity
         {
             alarmToggle.setVisibility(View.VISIBLE);
             snoozeLayout.setVisibility(View.GONE);
+            hueDimmer.setVisibility(View.VISIBLE);
+
             setMessageDisplay();
 
             //reset brightness etc to before ring started

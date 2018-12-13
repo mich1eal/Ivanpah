@@ -1,7 +1,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="#a4c6d8"
     android:id="@+id/background"
@@ -30,8 +30,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="-30sp"
                 android:layout_marginTop="-32sp"
-                android:format24Hour="@string/time_format"
-                android:format12Hour="HH:MM"
+                android:format12Hour="@string/time_format"
+                android:format24Hour="@string/time_format_twenty_four"
                 android:textColor="@android:color/white"
                 android:textSize="140sp" />
 
@@ -44,41 +44,6 @@
                 android:textSize="60dp"
                 android:visibility="gone" />
         </LinearLayout>
-
-        <!-- Alarm toggle button-->
-        <LinearLayout
-            android:id="@+id/alarmToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="90dp"
-            android:layout_alignParentLeft="true"
-            android:layout_below="@id/topLayout"
-            android:layout_margin="10dp"
-            android:background="@drawable/tile_button"
-            android:gravity="left|center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/alarmIcon"
-                android:layout_width="90dp"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:text="@string/alarm_icon"
-                android:textColor="#FFF04C"
-                android:textSize="50dp" />
-
-            <TextView
-                android:id="@+id/alarmText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/placeholder"
-                android:textColor="#FFF04C"
-                android:textSize="55dp"
-                android:visibility="gone"
-                android:layout_marginRight="20dp"/>
-
-        </LinearLayout>
-
 
         <!-- bottom linear layout-->
         <LinearLayout
@@ -95,11 +60,25 @@
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true">
 
+            <!-- Day of week -->
+            <TextClock
+                android:id="@+id/dayOfWeek"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="-10dp"
+                android:format12Hour="@string/day_of_week_format"
+                android:format24Hour="@string/day_of_week_format"
+                android:gravity="center"
+                android:textColor="@android:color/white"
+                android:textSize="50sp" />
+
+            <!-- Date -->
             <TextClock
                 android:id="@+id/date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="-10dp"
+                android:format12Hour="@string/date_format"
                 android:format24Hour="@string/date_format"
                 android:gravity="center"
                 android:textColor="@android:color/white"
@@ -142,10 +121,10 @@
 
                     <TextView
                         android:id="@+id/max"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="0dp"
-                        android:layout_gravity="left"
-                        android:layout_marginBottom="-3dp"
+                        android:layout_gravity="center"
+                        android:layout_marginBottom="-6dp"
                         android:layout_weight="1"
                         android:text="@string/placeholder"
                         android:textColor="@android:color/holo_orange_light"
@@ -154,10 +133,10 @@
 
                     <TextView
                         android:id="@+id/min"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="0dp"
-                        android:layout_gravity="left"
-                        android:layout_marginBottom="-3dp"
+                        android:layout_gravity="center"
+                        android:layout_marginBottom="-6dp"
                         android:layout_weight="1"
                         android:text="@string/placeholder"
                         android:textColor="@android:color/holo_blue_light"
@@ -187,12 +166,11 @@
             />
 
         <!-- Precip tile-->
-
         <FrameLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_toLeftOf="@id/bottomLayout">
+            android:layout_alignParentRight="true"
+            android:layout_above="@id/bottomLayout">
 
             <LinearLayout
                 android:id="@+id/precipTile"
@@ -255,6 +233,79 @@
                 android:textAllCaps="false"
                 android:textColor="@android:color/holo_orange_light"
                 android:textSize="90dp" /> />
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/hueToggle"
+            android:layout_width="90dp"
+            android:layout_height="90dp"
+            android:gravity="center"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentLeft="true"
+            android:layout_margin="10dp"
+            android:background="@drawable/tile_button"
+            android:text="@string/hue_icon"
+            android:textAllCaps="false"
+            android:textColor="#FFF04C"
+            android:textSize="50dp"
+            />
+
+        <!-- hueDimmerFrame is just used to get correct size for hueDimmer, which is rotated -->
+        <FrameLayout
+            android:id="@+id/hueDimmerFrame"
+            android:layout_width="90dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@id/topLayout"
+            android:layout_above="@id/hueToggle"
+            >
+
+            <SeekBar
+                android:id="@+id/hueDimmer"
+                android:layout_width="650dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:rotation="270"
+                android:progress="100"
+                android:thumb="@drawable/tile_seekbar"
+                android:progressDrawable="@drawable/tile_seekbar_progress"
+                />
+
+        </FrameLayout>
+
+
+        <!-- Alarm toggle button-->
+        <LinearLayout
+            android:id="@+id/alarmToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="90dp"
+            android:layout_toRightOf="@id/hueDimmerFrame"
+            android:layout_below="@id/topLayout"
+            android:layout_margin="10dp"
+            android:background="@drawable/tile_button"
+            android:gravity="left|center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/alarmIcon"
+                android:layout_width="90dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:text="@string/alarm_icon"
+                android:textColor="#FFF04C"
+                android:textSize="50dp" />
+
+            <TextView
+                android:id="@+id/alarmText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/placeholder"
+                android:textColor="#FFF04C"
+                android:textSize="55dp"
+                android:visibility="gone"
+                android:layout_marginRight="20dp"/>
 
         </LinearLayout>
 

@@ -2,13 +2,18 @@
 
     <string name="app_name">Ivanpah</string>
 
-    <string name="time_format">HH:mm</string>
+    <string name="time_format_twenty_four">HH:mm</string>
+    <string name="time_format">h:mm</string>
+
     <string name="date_format">MMMM d</string>
+    <string name="day_of_week_format">EEEE,</string>
 
     <string name="placeholder">-</string>
 
 
     <string name="alarm_icon">T</string>
+
+    <string name="hue_icon">l</string>
 
     <string name="snooze_snooze">Snooze</string>
     <string name="snooze_cancel">End</string>

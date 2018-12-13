@@ -28,6 +28,8 @@ public class MirrorAlarm
 
     private static final long HUE_FREQ_MILLI = 10000; //update hue every 10 secs
 
+    private static boolean isHueOn = false;
+
     private Context context;
     private AlarmListener listener;
     private Timer timer;
@@ -226,24 +228,57 @@ public class MirrorAlarm
 
     }
 
+    public void toggleHue(double bright)
+    {
+        if (isHueOn)
+        {
+            setHue(false);
+        }
+        else
+        {
+            setHue(bright);
+        }
+    }
+
+
+    public void setHue(double brightness)
+    {
+        if (brightness > 0)
+        {
+            int intBright = (int) (brightness * 255);
+            isHueOn = true;
+            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1, "{\"on\":true, \"bri\":" + intBright + "}");
+        }
+        else
+        {
+            setHue(false);
+        }
+
+    }
+
     public void setHue(boolean on)
     {
         if (on)
         {
-            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1, "{\"on\":true, \"bri\":" + 255 + "}");
+            isHueOn = true;
+            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1, "{\"on\":true}");
         }
         else
         {
+            isHueOn = false;
             new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1, "{\"on\":false}");
         }
 
     }
 
 
+
+
+
     public void snooze()
     {
         Calendar now = Calendar.getInstance();
-        setAlarm(now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE) + SNOOZE_MINS, SNOOZE_MINS); //no hue for snoozing
+        setAlarm(now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE) + SNOOZE_MINS, -1); //no hue for snoozing
     }
 
 
