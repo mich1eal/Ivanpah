@@ -26,7 +26,7 @@ public class MirrorAlarm
     private static final String HUE_URL_END1 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/3/state";
     private static final String HUE_IP = "192.168.0.10";
 
-    private static final long HUE_FREQ_MILLI = 10000; //update hue every 10 secs
+    private static final long SUNRISE_FREQ_MILLI = 10000; //update hue every 10 secs
 
     private static boolean isHueOn = false;
 
@@ -107,7 +107,7 @@ public class MirrorAlarm
         {
             Calendar hueAlarm = (Calendar) nextAlarm.clone(); //Clone since calendars are mutable
             hueAlarm.add(Calendar.MINUTE, 0 - minutesToHue); //Subtract mins for hue
-            setHue(hueAlarm, minutesToHue);
+            setSunriseTime(hueAlarm, (Calendar) nextAlarm.clone());
         }
 
     }
@@ -130,6 +130,7 @@ public class MirrorAlarm
     public void cancel()
     {
         if (timer != null) timer.cancel();
+
         timer = null;
         if (mediaPlayer.isPlaying())
         {
@@ -183,47 +184,43 @@ public class MirrorAlarm
     }
 
 
-    private void setHue(final Calendar hueTime, int minutesToHue)
+    private void setSunriseTime(final Calendar sunriseTime, final Calendar alarmTime)
     {
-        Log.d(TAG, "Setting hue to start at: " + hueTime.getTime().toString());
-        //milliseconds hue should be active
-        final long hueTimeWindow = minutesToHue * 60 * 1000;
+        Log.d(TAG, "Setting sunrise to start at: " + sunriseTime.getTime().toString());
+        //milliseconds sunrise should be active
+        final long sunriseTimeWindow = alarmTime.getTimeInMillis() - sunriseTime.getTimeInMillis();
 
         Timer timer = new Timer();
         TimerTask task = new TimerTask()
         {
             //Each time run() is called, hue is set to correct brightness, th
-            public void run()
-            {
+            public void run() {
                 Calendar now = Calendar.getInstance();
 
                 // If alarm is set, and it hasn't rung yet
-                if (isAlarmSet() && lastAlarm.after(now))
-                {
-                    long timeLeft = lastAlarm.getTimeInMillis() - now.getTimeInMillis();
-                    updateHue(timeLeft, hueTimeWindow);
-                }
-                else
-                {
-                    Log.d(TAG, "Hue cancelled");
+                if (isAlarmSet() && alarmTime.after(now)) {
+                    long timeLeft = alarmTime.getTimeInMillis() - now.getTimeInMillis();
+                    updateHue(timeLeft, sunriseTimeWindow);
+                } else {
+                    Log.d(TAG, "Sunrise cancelled");
                     cancel();
                 }
             }
         };
 
-        timer.schedule(task, hueTime.getTime(), HUE_FREQ_MILLI);
+        timer.schedule(task, sunriseTime.getTime(), SUNRISE_FREQ_MILLI);
     }
 
     private void updateHue(long timeLeft, long timeWindow)
     {
         if (timeLeft > 0)
         {
-            int bright = (int) ((timeWindow - timeLeft) * 255 / timeWindow);
+            double bright = ((double) timeWindow - timeLeft)  / timeWindow;
+
 
             Log.d(TAG, (timeLeft / 1000) + " secs to ring, setting bright to " + bright);
 
-            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1,
-                    "{\"on\":true, \"bri\":" + bright + "}");
+            setHue(bright);
         }
 
     }

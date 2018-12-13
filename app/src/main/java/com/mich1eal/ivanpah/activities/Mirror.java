@@ -164,7 +164,6 @@ public class Mirror extends Activity
             @Override
             public void onAlarmSet(Calendar time)
             {
-                alarm.setHue(false);
                 alarmText.setText(alarmFormat.format(time.getTime()));
                 alarmText.setVisibility(View.VISIBLE);
                 setDay(false);
@@ -298,12 +297,6 @@ public class Mirror extends Activity
             }
         });
 
-
-
-
-
-
-        //hueDimmer.setMinimumHeight(hueDimmerFrame.getHeight());
 
         setDay(true);
     }
