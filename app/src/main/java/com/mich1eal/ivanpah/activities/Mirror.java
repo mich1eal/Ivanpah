@@ -2,16 +2,25 @@ package com.mich1eal.ivanpah.activities;
 
 import android.app.Activity;
 import android.app.TimePickerDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PowerManager;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
@@ -19,6 +28,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
+import com.mich1eal.ivanpah.AlarmService;
 import com.mich1eal.ivanpah.MirrorAlarm;
 import com.mich1eal.ivanpah.R;
 import com.mich1eal.ivanpah.Weather;
@@ -31,12 +41,15 @@ import java.util.Random;
 public class Mirror extends Activity
     implements Weather.WeatherUpdateListener
 {
-    private static final String TAG = "MIRROR";
+    private final static String TAG = "MIRROR";
+
+    private final static String PREFS_ALARM = "ALARM_TIME_PREFERENCE";
+    private final static String PREFS_BRIGHT_STATE = "BRIGHT_STATE_PREFERENCE";
 
     private final static long weatherDelay = 10 * 60 * 1000; //Time between weather updates in millis
     private final static double minRainDisplay = .20; //Minimum threshold for displaying rain prob
 
-    private final static int defaultMinsToHue = 20;
+    public final static int defaultMinsToHue = 20;
 
     //Dimming settings
     private final static int fullDarkLevel = 0;
@@ -44,7 +57,6 @@ public class Mirror extends Activity
 
     //Format for alarm
     private static final SimpleDateFormat alarmFormat = new SimpleDateFormat("H:mm");
-
 
     //Variables for background
     private static Calendar lastDay; // used for determining when its a new day
@@ -91,8 +103,10 @@ public class Mirror extends Activity
     private static Weather weather;
     private static MirrorAlarm alarm;
 
-    //Used for determining whether alarm diaglog was cancelled or closed
+    //Used for determining whether alarm dialog was cancelled or closed
     private static boolean dialogCancelButton = true;
+
+    private Window window;
 
     @Override
     public void onStart()
@@ -105,6 +119,12 @@ public class Mirror extends Activity
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mirror);
+
+        // Get window for wakefullness controls
+        window = getWindow();
+
+        // Set up shared preferences for alarm saving
+        final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         // Initialize views that will need to be updated
         temp = (TextView) findViewById(R.id.temp);
@@ -159,29 +179,41 @@ public class Mirror extends Activity
 
         // Initialize MirrorAlarm
         alarm = new MirrorAlarm(this);
-        alarm.setAlarmListener(new MirrorAlarm.AlarmListener()
+
+        if (alarm.isRinging())
         {
-            @Override
-            public void onAlarmSet(Calendar time)
+            Log.d(TAG, "Alarm is currently ringing!");
+            setRing(true);
+        }
+
+        else if (alarm.isSet())
+        {
+            Log.d(TAG, "A set alarm was detected");
+            //If alarm is set, show it
+            Calendar alarmTime = getSavedAlarmTime(preferences);
+
+            if (alarmTime == null)
             {
-                alarmText.setText(alarmFormat.format(time.getTime()));
-                alarmText.setVisibility(View.VISIBLE);
-                setDay(false);
+                Log.e(TAG, "ERROR, if an alarm  has been set Alarmtime should not be null");
+                Log.d(TAG, "Showing no alarm");
+                setDay(getSavedBrightState(preferences));
+                displayAlarm(null);
             }
 
-            @Override
-            public void onCancel()
+            else
             {
-                alarmText.setVisibility(View.GONE);
-                setDay(true);
+                Log.d(TAG, "A set alarm was detected");
+                displayAlarm(alarmTime);
             }
+        }
+        else
+        {
+            //If no alarm, set to day mode
+            setDay(getSavedBrightState(preferences));
+            displayAlarm(null);
 
-            @Override
-            public void onRing()
-            {
-                setRing(true);
-            }
-        });
+            Log.d(TAG, "No alarm found");
+        }
 
         // set up brightness toggle button
         brightnessToggle.setOnClickListener(new View.OnClickListener() {
@@ -189,6 +221,16 @@ public class Mirror extends Activity
             public void onClick(View v)
             {
                 setDay(!isDay); //toggle brightness
+            }
+        });
+
+        brightnessToggle.setOnLongClickListener(new View.OnLongClickListener() {
+
+            @Override
+            public boolean onLongClick(View v)
+            {
+                Log.d(TAG, "Long press recieved");
+                return true;
             }
         });
 
@@ -204,8 +246,8 @@ public class Mirror extends Activity
                 timePicker = new TimePickerDialog(Mirror.this, new TimePickerDialog.OnTimeSetListener() {
                     @Override
                     public void onTimeSet(TimePicker timePicker, int selectedHour, int selectedMinute) {
-                        alarm.setAlarm(selectedHour, selectedMinute, defaultMinsToHue);
                         dialogCancelButton = false; //if this is called, was not cancelled with cancel button
+                        setAlarm(preferences, selectedHour, selectedMinute);
                         Log.d(TAG, "onTimeSet()");
                     }
 
@@ -227,6 +269,9 @@ public class Mirror extends Activity
                         if (dialogCancelButton)
                         {
                             alarm.cancel();
+                            alarmText.setVisibility(View.GONE);
+                            setDay(true);
+
                         }
                         dialogCancelButton = true;
                     }
@@ -236,14 +281,15 @@ public class Mirror extends Activity
             }
         }
         );
-
         //set up Snooze buttons
         snoozeSnooze.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v)
             {
-                alarm.snooze();
+
+                Calendar newAlarm = alarm.snooze();
                 setRing(false);
+                formatAlarmSet(preferences, newAlarm);
             }
         });
 
@@ -255,7 +301,6 @@ public class Mirror extends Activity
                 setRing(false);
             }
         });
-
 
         //set up hueDimmer
         hueToggle.setTypeface(iconFont);
@@ -297,8 +342,18 @@ public class Mirror extends Activity
             }
         });
 
+        // Setup broadcast receiver for alarm updates
+        BroadcastReceiver uiReceiver = new BroadcastReceiver()
+            {
+                @Override
+                public void onReceive(Context context, Intent intent)
+                {
+                    Log.d(TAG, "Ring broadcast received by UI");
+                    setRing(true);
+                }
+            };
 
-        setDay(true);
+        this.registerReceiver(uiReceiver, new IntentFilter(AlarmService.ACTION_RING));
     }
 
     @Override
@@ -358,18 +413,22 @@ public class Mirror extends Activity
     //format either to day or night mode
     private void setDay(boolean day)
     {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         isDay = day;
+        saveBrightState(preferences, day);
         if (day) //set day
         {
             Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
             brightnessToggle.setText(R.string.wi_night_clear);
             setBackgroundImage();
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
         else // set night
         {
             Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullDarkLevel);
             brightnessToggle.setText(R.string.wi_day_sunny);
             background.setBackgroundColor(Color.BLACK);
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         }
     }
 
@@ -385,6 +444,7 @@ public class Mirror extends Activity
             if (!isDay)
             {
                 Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
+                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             }
         }
         else
@@ -392,11 +452,81 @@ public class Mirror extends Activity
             alarmToggle.setVisibility(View.VISIBLE);
             snoozeLayout.setVisibility(View.GONE);
             hueDimmer.setVisibility(View.VISIBLE);
+            displayAlarm(null);
 
             setMessageDisplay();
 
             //reset brightness etc to before ring started
             setDay(isDay);
+        }
+    }
+
+    private Calendar getSavedAlarmTime(SharedPreferences preferences)
+    {
+        long alarmTime = preferences.getLong(PREFS_ALARM, -1);
+
+        if (alarmTime != -1)
+        {
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTimeInMillis(alarmTime);
+            return calendar;
+        }
+
+        return null;
+    }
+
+    private void saveAlarmTime(SharedPreferences preferences, Calendar alarmTime)
+    {
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putLong(PREFS_ALARM, alarmTime.getTimeInMillis());
+        editor.apply();
+    }
+
+    private boolean getSavedBrightState(SharedPreferences preferences)
+    {
+        return preferences.getBoolean(PREFS_BRIGHT_STATE, true);
+    }
+
+    private void saveBrightState(SharedPreferences preferences, boolean brightState)
+    {
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean(PREFS_BRIGHT_STATE, brightState);
+        editor.apply();
+    }
+
+    private void setAlarm(SharedPreferences preferences, int selectedHour, int selectedMinute)
+    {
+        alarm.setAlarm(selectedHour, selectedMinute, defaultMinsToHue);
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, selectedHour);
+        calendar.set(Calendar.MINUTE, selectedMinute);
+
+        formatAlarmSet(preferences, calendar);
+    }
+
+    private void formatAlarmSet(SharedPreferences preferences, Calendar calendar)
+    {
+        saveAlarmTime(preferences, calendar);
+        displayAlarm(calendar);
+
+    }
+
+    private void displayAlarm(Calendar calendar)
+    {
+        //Alarm has been cancelled
+        if (calendar == null)
+        {
+            alarmText.setVisibility(View.GONE);
+            setDay(true);
+        }
+
+        //Alarm has been set
+        else
+        {
+            alarmText.setText(alarmFormat.format(calendar.getTime()));
+            alarmText.setVisibility(View.VISIBLE);
+            setDay(false);
         }
     }
 
@@ -478,6 +608,7 @@ public class Mirror extends Activity
         else messageDisplay.setVisibility(View.GONE);
     }
 
+
     private void setImmersive()
     {
         getWindow().getDecorView().setSystemUiVisibility(
@@ -488,6 +619,7 @@ public class Mirror extends Activity
                         | View.SYSTEM_UI_FLAG_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
     }
+
 
     @Override
     public void onDestroy()
