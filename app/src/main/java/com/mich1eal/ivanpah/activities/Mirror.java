@@ -177,12 +177,12 @@ public class Mirror extends Activity
         {
             permLoc = new Location("Pittsburgh");
             // These are values for Pittsburgh PA
-            //permLoc.setLatitude(40.4406);
-            //permLoc.setLongitude(-79.9959);
+            permLoc.setLatitude(40.4406);
+            permLoc.setLongitude(-79.9959);
 
             // These for Indy
-            permLoc.setLatitude(39.7739318);
-            permLoc.setLongitude(-86.15002229999999);
+            //permLoc.setLatitude(39.7739318);
+            //permLoc.setLongitude(-86.15002229999999);
         }
 
         // Initialize data fetchers
