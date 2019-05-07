@@ -6,32 +6,6 @@
              android:background="#000000"
              tools:context=".main">
 
-    <!-- Notifications bar-->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/alarmIcon"
-            android:text="@string/alarm_icon"
-            android:visibility="gone"
-            android:textColor="#FFF04C"
-            android:textSize="60dp"
-            />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/alarmText"
-            android:text="@string/alarm_test"
-            android:visibility="gone"
-            android:textColor="#FFF04C"
-            android:textSize="60dp"/>
-
-    </LinearLayout>
-
 
     <TextClock
         android:layout_width="match_parent"
