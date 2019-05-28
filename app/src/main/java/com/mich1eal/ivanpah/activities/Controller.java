@@ -3,6 +3,7 @@ package com.mich1eal.ivanpah.activities;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -74,7 +75,8 @@ public class Controller extends Activity
 
         hueEnabled = settings.getBoolean(Setup.enableHue, false);
 
-
+        Typeface iconFont = Typeface.createFromAsset(getAssets(), "fonts/heydings_icons.ttf");
+        settingsButton.setTypeface(iconFont);
 
         if (hueEnabled)
         {

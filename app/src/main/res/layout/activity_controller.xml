@@ -19,7 +19,10 @@
             android:id="@+id/control_status_text"
             android:text="@string/control_status"
             android:layout_alignParentLeft="true"
-            android:layout_margin="10dp"/>
+            android:layout_alignParentTop="true"
+            android:layout_marginTop="15dp"
+            android:layout_marginBottom="15dp"
+            android:layout_marginRight="3dp"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -27,21 +30,23 @@
             android:layout_toRightOf="@id/control_status_text"
             android:layout_alignTop="@id/control_status_text"
             android:text="@string/status_disconnect"
+            android:layout_marginRight="10dp"
             android:id="@+id/control_status"/>
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@id/control_status_text"
+            android:layout_alignParentTop="true"
+            android:layout_toRightOf="@+id/control_status"
             android:id="@+id/control_retry"
             android:text="@string/control_retry"/>
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_toRightOf="@id/control_retry"
-            android:layout_alignTop="@id/control_retry"
-            android:layout_marginLeft="30dp"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@id/control_retry"
+            android:layout_marginLeft="15dp"
             android:id="@+id/control_duo"
             android:text="@string/control_launch_duo"/>
 
@@ -63,7 +68,8 @@
         <TimePicker
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/control_time_pick">
+            android:id="@+id/control_time_pick"
+            android:layout_gravity="center">
         </TimePicker>
 
 

@@ -95,11 +95,14 @@ public class BWrapper
             handler.sendEmptyMessage(newState);
         }
 
+
         // If no bluetooth, don't start searching
         if (newState == STATE_SEARCHING && !hasBluetooth())
         {
+            if (connectedThread != null) connectedThread.cancel();
+            if (searchThread != null) searchThread.cancel();
+
             setState(STATE_NO_BLUETOOTH);
-            return;
         }
         else if (newState == STATE_DISCONNECTED)
         {
@@ -114,7 +117,14 @@ public class BWrapper
             if (isServer) startServer();
             else startClient();
         }
+        else if (newState == STATE_FOUND)
+        {
+            //If a device is found, stop looking for new ones
+            Log.d(TAG, "Device found, unregistering receiver");
+            if (!isServer) context.unregisterReceiver(receiver);
+        }
     }
+
 
     public void setAutoReconnect(boolean autoReconnect){this.autoReconnect = autoReconnect;}
 
@@ -154,10 +164,14 @@ public class BWrapper
         if (pairedDevices.size() > 0)
         {
             BluetoothDevice device = pairedDevices.get(0);
-            Log.d(TAG, "Found a pre-paired device: name = " + device.getName() + " at " + device.getAddress());
-            if (device.getName().equals(SERVER_NAME))
+            Log.d(TAG, "Found a pre-paired device: " + device.toString());
+
+            String name = device.getName();
+            if (name != null && name.equals(SERVER_NAME))
             {
-                new ClientThread(device).start();
+                Log.d(TAG, "Prepaired server found: " + device.toString());
+                searchThread = new ClientThread(device);
+                searchThread.start();
                 return;
             }
         }
@@ -180,8 +194,10 @@ public class BWrapper
 
                         if(name != null && name.equals(SERVER_NAME))
                         {
+                            Log.d(TAG, "New server found: " + name);
                             searchThread = new ClientThread(device);
                             searchThread.start();
+                            return;
                         }
                     }
                 }
