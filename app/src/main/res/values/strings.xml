@@ -2,8 +2,11 @@
 
     <string name="app_name">Ivanpah</string>
 
-    <string name="time_format">h:mm</string>
-    <string name="date_format">EEEE, MMMM d</string>
+    <string name="time_format12">h:mm</string>
+    <string name="time_format24">h:mm</string>
+
+    <string name="date_format12">EEEE, MMMM d</string>
+    <string name="date_format24">EEEE, MMMM d</string>
 
     <string name="placeholder">-</string>
     <string name="bluetooth_name">Ivanpah Smart Mirror</string>

@@ -1,15 +1,18 @@
 package com.mich1eal.ivanpah;
 
+import android.app.ActivityManager;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
-import android.media.MediaPlayer;
-import android.media.RingtoneManager;
-import android.net.Uri;
-import android.os.Handler;
+import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Build;
 import android.util.Log;
 
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Calendar;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Created by Michael on 10/5/2016.
@@ -17,118 +20,247 @@ import java.util.TimerTask;
 public class MirrorAlarm
 {
     private static final String TAG = MirrorAlarm.class.getSimpleName();
+    private static final int SNOOZE_MINS = 10;
+
+    private static final String HUE_URL_BASE = "http://";
+    private static String HUE_IP;
+    private static final String HUE_URL_END1 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/3/state";
+
+    private static boolean isHueOn = false;
+
     private Context context;
-    private AlarmListener listener;
-    private Timer timer;
-    private Calendar alarmTime;
-    private static MediaPlayer mediaPlayer;
+    private Calendar lastAlarm;
 
     public MirrorAlarm(Context context)
     {
         this.context = context;
-        Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-        if (alarmUri == null)
-        {
-            alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        }
-        mediaPlayer = MediaPlayer.create(context.getApplicationContext(), alarmUri);
-        mediaPlayer.setLooping(true);
     }
 
-    public void setAlarmListener(AlarmListener listener)
+    public int getLastAlarmHour()
     {
-        this.listener = listener;
+        //Lazy constructor for lastAlarm
+        if (lastAlarm == null) lastAlarm = Calendar.getInstance();
+        return lastAlarm.get(Calendar.HOUR_OF_DAY);
+    }
+
+    public int getLastAlarmMinute()
+    {
+        //Lazy constructor for lastAlarm
+        if (lastAlarm == null) lastAlarm = Calendar.getInstance();
+        return lastAlarm.get(Calendar.MINUTE);
     }
 
     // Sets alarm to ring at the given calendar date. Overwrites any alarms currently in progress
-    public void setAlarm(Calendar alarmTime)
+    public void setAlarm(int hour, int minute, int minutesToHue, String hueIP)
     {
         Calendar now = Calendar.getInstance();
-        this.alarmTime = alarmTime;
+
+        //New calendar since calendars are mutable
+        Calendar nextAlarm = Calendar.getInstance();
+        nextAlarm.set(Calendar.HOUR_OF_DAY, hour);
+        nextAlarm.set(Calendar.MINUTE, minute);
+
+        //round off time to 0 seconds, so rings right when changes
+        nextAlarm.set(Calendar.SECOND, 0);
 
         // if alarmTime occurs before now, set its day to tomorrow
-        if (alarmTime.before(now))
+        if (nextAlarm.before(now))
         {
             // if the alarm time already happened, make it go off tomorrow instead
-            alarmTime.add(Calendar.DATE, 1);
+            nextAlarm.add(Calendar.DATE, 1);
         }
 
-        Log.d(TAG, "Alarm set for: " + alarmTime.getTime().toString());
+        if(hueIP != null)
+        {
+            this.HUE_IP = hueIP;
+        }
 
+        //Set alarm
+        setAlarmService(nextAlarm);
+
+        //Set hue fade in
+        if (minutesToHue > 0)
+        {
+            Calendar hueAlarm = (Calendar) nextAlarm.clone(); //Clone since calendars are mutable
+            hueAlarm.add(Calendar.MINUTE, 0 - minutesToHue); //Subtract mins for hue
+
+            // hueAlarm should not be in the past
+            if(hueAlarm.before(Calendar.getInstance())) hueAlarm = Calendar.getInstance();
+
+            setHueService(hueAlarm, (Calendar) nextAlarm.clone());
+        }
+    }
+
+    private void setAlarmService(Calendar lastAlarm)
+    {
         cancel();
-        timer = new Timer();
-        timer.schedule(getAlarmTask(), alarmTime.getTime());
-        if (listener!= null) listener.onAlarmSet(alarmTime);
+        long alarmTime = lastAlarm.getTimeInMillis();
+
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(context, AlarmService.class);
+
+        PendingIntent pendingIntent = PendingIntent.getService(context, 0, intent, 0);
+
+        //setExact method introduced in API 19, before it was always exact
+        if (Build.VERSION.SDK_INT > 19) {
+            am.setExact(AlarmManager.RTC_WAKEUP, alarmTime, pendingIntent);
+        } else {
+            am.set(AlarmManager.RTC_WAKEUP, alarmTime, pendingIntent);
+        }
+    }
+
+    private void setHueService(Calendar hueAlarm, Calendar lastAlarm)
+    {
+        long alarmTime = lastAlarm.getTimeInMillis();
+        long hueTime = hueAlarm.getTimeInMillis();
+
+        AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(context, HueService.class);
+        intent.putExtra(HueService.EXTRA_RING_TIME, alarmTime);
+
+        PendingIntent pendingIntent = PendingIntent.getService(context, 0, intent, 0);
+
+        //setExact method introduced in API 19, before it was always exact
+        if (Build.VERSION.SDK_INT > 19) {
+            am.setExact(AlarmManager.RTC_WAKEUP, hueTime, pendingIntent);
+        } else {
+            am.set(AlarmManager.RTC_WAKEUP, hueTime, pendingIntent);
+        }
+    }
+
+    public boolean isSet()
+    {
+        Intent intent = new Intent(context, AlarmService.class);
+        PendingIntent sender = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_NO_CREATE);
+
+        return sender != null;
+    }
+
+    public boolean isRinging()
+    {
+        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (AlarmService.class.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void cancel()
     {
-        if (timer != null) timer.cancel();
-        timer = null;
-        mediaPlayer.stop();
-        if (listener != null) listener.onCancel();
+        Log.d(TAG, "onCancel called");
+
+        //Cancel ringing
+        Intent intent = new Intent(context, AlarmService.class);
+        context.stopService(intent);
+
+        //Cancel ring service
+        PendingIntent sender = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_NO_CREATE);
+
+        //Cancel ring pending intent and alarmmanager
+        if (sender == null) Log.d(TAG, "No alarm found to cancel");
+        else
+        {
+            Log.d(TAG, "Alarm found, proceding with cancelling");
+            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            alarmManager.cancel(sender);
+            sender.cancel();
+        }
+
+        //Cancel hue
+        intent = new Intent(context, HueService.class);
+        context.stopService(intent);
+
+        //Cancel hue service
+        sender = PendingIntent.getService(context, 0, intent, PendingIntent.FLAG_NO_CREATE);
+
+        //Cancel hue pending intent and alarmmanager
+        if (sender == null) Log.d(TAG, "No hue found to cancel");
+        else
+        {
+            Log.d(TAG, "Hue found, proceding with cancelling");
+            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            alarmManager.cancel(sender);
+            sender.cancel();
+        }
     }
 
-    public void ring()
+    public static void toggleHue(double bright)
     {
-        // Mediaplayer has to be prepared before it can start (took 2 ms when I timed it)
-        mediaPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener()
+        if (isHueOn)
         {
-            @Override
-            public void onPrepared(MediaPlayer mp)
-            {
-                mediaPlayer.start();
-                if (listener != null) listener.onRing();
+            setHue(false);
+        }
+        else
+        {
+            setHue(bright);
+        }
+    }
+
+    public static void setHue(double brightness)
+    {
+        if (brightness > 0)
+        {
+            int intBright = (int) (brightness * 255);
+            isHueOn = true;
+            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1, "{\"on\":true, \"bri\":" + intBright + "}");
+        }
+        else
+        {
+            setHue(false);
+        }
+
+    }
+
+    public static void setHue(boolean on)
+    {
+        if (on)
+        {
+            isHueOn = true;
+            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1, "{\"on\":true}");
+        }
+        else
+        {
+            isHueOn = false;
+            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1, "{\"on\":false}");
+        }
+
+    }
+
+    public Calendar snooze()
+    {
+        Calendar now = Calendar.getInstance();
+        now.add(Calendar.MINUTE, SNOOZE_MINS);
+        setAlarm(now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), -1, null); //no hue for snoozing
+        return now;
+    }
+
+    private static class URLCaller extends AsyncTask<String, Void, Void> {
+        @Override
+        protected Void doInBackground(String... params) {
+            HttpURLConnection con = null;
+            URL url = null;
+            OutputStreamWriter out = null;
+
+            try {
+                url = new URL(params[0]);
+
+                con = (HttpURLConnection) url.openConnection();
+                con.setDoOutput(true);
+                con.setRequestMethod("PUT");
+                out = new OutputStreamWriter(con.getOutputStream());
+                out.write(params[1]);
+                out.close();
+
+                con.getResponseMessage();
+                // Log.d(TAG, "Response code from hue = " + con.getResponseCode());
+                // Log.d(TAG, "Response message from hue = " + con.getResponseMessage());
+            } catch (Exception e) {
+                Log.e(TAG, e.getMessage());
             }
-        });
 
-        try
-        {
-            mediaPlayer.prepareAsync();
+            return null;
         }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-    }
-
-    // Method for neatness, returns a timertask that calls ring when completed
-    private TimerTask getAlarmTask ()
-    {
-        return new TimerTask()
-        {
-            final Handler handler = new Handler();
-            @Override
-            public void run()
-            {
-                handler.post(
-                        new Runnable()
-                        {
-                            @Override
-                            public void run()
-                            {
-                                ring();
-                            }
-                        }
-                );
-            }
-        };
-    }
-
-    public long timeToAlarm()
-    {
-        if (timer != null)
-        {
-            return alarmTime.getTimeInMillis() - Calendar.getInstance().getTimeInMillis();
-        }
-        return -1;
-    }
-
-
-    public interface AlarmListener
-    {
-        public void onAlarmSet(Calendar time);
-        public void onCancel();
-        public void onRing();
     }
 }

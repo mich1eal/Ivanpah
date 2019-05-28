@@ -173,11 +173,16 @@ public class BWrapper
                 if (action.equals(BluetoothDevice.ACTION_FOUND)) //device found
                 {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    if (device != null) Log.d(TAG, "Device found: " + device.toString());
-                    if (device != null && device.getName().equals(SERVER_NAME))
+                    if (device != null)
                     {
-                        searchThread = new ClientThread(device);
-                        searchThread.start();
+                        Log.d(TAG, "Device found: " + device.toString());
+                        String name = device.getName();
+
+                        if(name != null && name.equals(SERVER_NAME))
+                        {
+                            searchThread = new ClientThread(device);
+                            searchThread.start();
+                        }
                     }
                 }
                 else if (action.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)

@@ -1,8 +1,11 @@
 package com.mich1eal.ivanpah.activities;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -14,6 +17,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
@@ -22,6 +26,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.mich1eal.ivanpah.AlarmService;
 import com.mich1eal.ivanpah.BWrapper;
 import com.mich1eal.ivanpah.Duolingo;
 import com.mich1eal.ivanpah.MirrorAlarm;
@@ -48,6 +53,8 @@ public class Mirror extends Activity
 {
     private static final String TAG = "MIRROR";
 
+    private final static String PREFS_ALARM = "ALARM_TIME_PREFERENCE";
+
     private final static long weatherDelay = 10 * 60 * 1000; //Time between weather updates in millis
     private final static long duoDelay = 5 * 1000; // Time between duolingo updates in millis
     private final static double minRainDisplay = .1; //Minimum threshold for displaying rain prob
@@ -57,6 +64,9 @@ public class Mirror extends Activity
     private final static String HUE_URL_END1 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/2/state";
     private final static String HUE_URL_END2 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/3/state";
 
+    private static String hueIP;
+    private static int defaultMinsToHue = 20;
+    public static int hueMins = defaultMinsToHue;
 
     private static TextView temp, max, min, icon,precipType, precipPercent, alarmIcon, alarmText, messageDisplay;
     private static LinearLayout precipTile, allWeather;
@@ -66,25 +76,21 @@ public class Mirror extends Activity
     private static Weather weather;
     private static Duolingo duolingo;
     private static MirrorAlarm alarm;
-    private static boolean hasLightSensor;
 
+    private static boolean hasLightSensor;
     private static boolean dimEnabled = false;
 
     private static boolean activeDuo = false, upcomingDuo = false, hasDuo = true;
 
-    private static int brightness;
-
     private static int fullDarkLevel = 100;
     private static int fullBrightlevel = 255;
+
 
     // Offsets between sunsets and sunrise for dimming purposes, in seconds
     private static long sunriseOffset = 60 * 60;
     private static long sunsetOffset = 120 * 60;
 
-    private static boolean hueEnabled = false;
-    private static String hueIP;
-    private static int hueMins;
-
+    static SharedPreferences preferences;
 
 
     //Format for alarm
@@ -117,10 +123,11 @@ public class Mirror extends Activity
         messageDisplay = (TextView) findViewById(R.id.messageView);
         allWeather = (LinearLayout) findViewById(R.id.allWeather);
 
+        // Set up shared preferences for alarm saving
+        preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 
         // Stuff for handling screen brightness
-
         Settings.System.putInt(getContentResolver(),
                 Settings.System.SCREEN_BRIGHTNESS_MODE,
                 Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
@@ -221,66 +228,51 @@ public class Mirror extends Activity
 
         // Initialize MirrorAlarm
         alarm = new MirrorAlarm(this);
-        alarm.setAlarmListener(new MirrorAlarm.AlarmListener()
+        if (alarm.isRinging())
+        {
+            Log.d(TAG, "Alarm is currently ringing!");
+            setRing(true);
+        }
+        else if (alarm.isSet())
+        {
+            Log.d(TAG, "A set alarm was detected");
+            //If alarm is set, show it
+            Calendar alarmTime = getSavedAlarmTime();
+
+            if (alarmTime == null)
+            {
+                Log.e(TAG, "ERROR, if an alarm  has been set Alarmtime should not be null");
+                Log.d(TAG, "Showing no alarm");
+                displayAlarm(null);
+            }
+
+            else
+            {
+                Log.d(TAG, "A set alarm was detected");
+                displayAlarm(alarmTime);
+            }
+        }
+        else
+        {
+            //If no alarm, set to day mode
+            displayAlarm(null);
+
+            Log.d(TAG, "No alarm found");
+        }
+
+
+        // Setup broadcast receiver for alarm updates
+        BroadcastReceiver uiReceiver = new BroadcastReceiver()
         {
             @Override
-            public void onAlarmSet(Calendar time)
+            public void onReceive(Context context, Intent intent)
             {
-                // Set UI
-                String dispString = alarmFormat.format(time.getTime());
-                if (upcomingDuo || activeDuo) dispString += " - Duolingo";
-                alarmText.setText(dispString);
-                alarmText.setVisibility(View.VISIBLE);
-                alarmIcon.setVisibility(View.VISIBLE);
-            }
-
-            @Override
-            public void onCancel()
-            {
-                alarmText.setVisibility(View.GONE);
-                alarmIcon.setVisibility(View.GONE);
-            }
-
-            @Override
-            public void onRing()
-            {
-                if (upcomingDuo) startDuolingo();
-            }
-
-        });
-
-
-        //Stuff for hue
-
-        Timer timer = new Timer();
-        TimerTask task = new TimerTask()
-        {
-            public void run()
-            {
-                if (hueEnabled)
-                {
-                    long timeLeft = alarm.timeToAlarm();
-                    if (timeLeft > 0)
-                    {
-                        long brightTime = hueMins * 60 * 1000;
-                        if (timeLeft < brightTime)
-                        {
-                            int bright = (int) ((brightTime - timeLeft) * 255 / brightTime);
-
-                            new URLCaller().execute(HUE_URL_BASE + hueIP + HUE_URL_END1,
-                                    "{\"on\":true, \"bri\":" + bright + "}");
-
-                            new URLCaller().execute(HUE_URL_BASE + hueIP + HUE_URL_END2,
-                                    "{\"on\":true, \"bri\":" + bright + "}");
-                        }
-                    }
-
-                }
+                Log.d(TAG, "Ring broadcast received by UI");
+                setRing(true);
             }
         };
 
-
-        timer.schedule(task, 0, 5 * 1000);
+        this.registerReceiver(uiReceiver, new IntentFilter(AlarmService.ACTION_RING));
     }
 
     @Override
@@ -425,7 +417,6 @@ public class Mirror extends Activity
                 out = fullDarkLevel;
             }
 
-
             Log.d(TAG, "Setting brightness to: " + out);
             Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, out);
         }
@@ -435,9 +426,13 @@ public class Mirror extends Activity
     private static void handleCancel()
     {
         upcomingDuo = false;
-        hueEnabled = false;
-        //Alarm can't be canceld while duolingo is active
-        if (!activeDuo) alarm.cancel();
+        //Alarm can't be cancelled while duolingo is active
+        if (!activeDuo)
+        {
+            setRing(false);
+            alarm.cancel();
+        }
+
     }
 
     private static void startDuolingo()
@@ -461,7 +456,7 @@ public class Mirror extends Activity
         {
             Calendar cal = Calendar.getInstance();
             cal.add(Calendar.MINUTE, DUO_SNOOZE);
-            alarm.setAlarm(cal);
+            setAlarm(cal);
         }
     }
 
@@ -474,6 +469,67 @@ public class Mirror extends Activity
                         | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+    }
+
+    private static void setRing(boolean isRinging)
+    {
+        if (isRinging)
+        {
+            if (upcomingDuo) startDuolingo();
+        }
+        else
+        {
+            displayAlarm(null);
+        }
+    }
+
+
+    private Calendar getSavedAlarmTime()
+    {
+        long alarmTime = preferences.getLong(PREFS_ALARM, -1);
+        if (alarmTime != -1)
+        {
+            Calendar calendar = Calendar.getInstance();
+
+            calendar.setTimeInMillis(alarmTime);
+            return calendar;
+        }
+        return null;
+    }
+
+    private static void saveAlarmTime(Calendar alarmTime)
+    {
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putLong(PREFS_ALARM, alarmTime.getTimeInMillis());
+        editor.apply();
+    }
+
+    private static void setAlarm(Calendar calendar)
+    {
+        alarm.setAlarm(calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), hueMins, hueIP);
+
+        saveAlarmTime(calendar);
+        displayAlarm(calendar);
+    }
+
+    private static void displayAlarm(Calendar calendar)
+    {
+        //Alarm has been cancelled
+        if (calendar == null)
+        {
+            alarmText.setVisibility(View.GONE);
+            alarmIcon.setVisibility(View.GONE);
+        }
+        //Alarm has been set
+        else
+        {
+            String dispString = alarmFormat.format(calendar.getTime());
+            if (upcomingDuo || activeDuo) dispString += " - Duolingo";
+
+            alarmText.setText(dispString);
+            alarmText.setVisibility(View.VISIBLE);
+            alarmIcon.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -495,25 +551,6 @@ public class Mirror extends Activity
             bWrap.close();
         }
         super.onDestroy();
-    }
-
-    public TimerTask snoozeTimer(final Handler handler)
-    {
-        return new TimerTask()
-        {
-            @Override
-            public void run()
-            {
-                handler.post(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        alarm.ring();
-                    }
-                });
-            }
-        };
     }
 
     static class BHandler extends Handler
@@ -556,13 +593,13 @@ public class Mirror extends Activity
                     {
                         if (tempHueIP != null)
                         {
-                            hueEnabled = true;
                             hueIP = tempHueIP;
                             hueMins = tempHueTime;
                         }
                         else
                         {
-                            hueEnabled = false;
+                            hueIP = null;
+                            hueMins = -1;
                         }
 
                         if (tempDuoUserName != null)
@@ -577,7 +614,7 @@ public class Mirror extends Activity
 
                         final Calendar cal = Calendar.getInstance();
                         cal.setTimeInMillis(tempAlarmTime);
-                        alarm.setAlarm(cal);
+                        setAlarm(cal);
                     }
 
                 }
