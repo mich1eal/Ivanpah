@@ -25,6 +25,7 @@ public class MirrorAlarm
     private static final String HUE_URL_BASE = "http://";
     private static String HUE_IP;
     private static final String HUE_URL_END1 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/3/state";
+    private static final String HUE_URL_END2 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/2/state";
 
     private static boolean isHueOn = false;
 
@@ -205,6 +206,7 @@ public class MirrorAlarm
             int intBright = (int) (brightness * 255);
             isHueOn = true;
             new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1, "{\"on\":true, \"bri\":" + intBright + "}");
+            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END2, "{\"on\":true, \"bri\":" + intBright + "}");
         }
         else
         {
@@ -219,13 +221,14 @@ public class MirrorAlarm
         {
             isHueOn = true;
             new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1, "{\"on\":true}");
+            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END2, "{\"on\":true}");
         }
         else
         {
             isHueOn = false;
             new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END1, "{\"on\":false}");
+            new URLCaller().execute(HUE_URL_BASE + HUE_IP + HUE_URL_END2, "{\"on\":false}");
         }
-
     }
 
     public Calendar snooze()
