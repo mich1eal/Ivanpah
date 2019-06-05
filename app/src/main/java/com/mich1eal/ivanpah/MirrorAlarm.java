@@ -212,7 +212,6 @@ public class MirrorAlarm
         {
             setHue(false);
         }
-
     }
 
     public static void setHue(boolean on)

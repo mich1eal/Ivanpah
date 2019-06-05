@@ -7,10 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
@@ -18,34 +14,26 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.preference.PreferenceManager;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.mich1eal.ivanpah.AlarmService;
 import com.mich1eal.ivanpah.BWrapper;
+import com.mich1eal.ivanpah.Dimmer;
 import com.mich1eal.ivanpah.Duolingo;
 import com.mich1eal.ivanpah.MirrorAlarm;
 import com.mich1eal.ivanpah.R;
 import com.mich1eal.ivanpah.Weather;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Timer;
-import java.util.TimerTask;
 
 
 public class Mirror extends Activity
@@ -76,22 +64,18 @@ public class Mirror extends Activity
     private static Weather weather;
     private static Duolingo duolingo;
     private static MirrorAlarm alarm;
+    private static Dimmer dimmer;
 
     private static boolean hasLightSensor;
     private static boolean dimEnabled = false;
 
     private static boolean activeDuo = false, upcomingDuo = false, hasDuo = true;
 
-    private static int fullDarkLevel = 100;
-    private static int fullBrightlevel = 255;
-
-
     // Offsets between sunsets and sunrise for dimming purposes, in seconds
     private static long sunriseOffset = 60 * 60;
     private static long sunsetOffset = 120 * 60;
 
     static SharedPreferences preferences;
-
 
     //Format for alarm
     private static final SimpleDateFormat alarmFormat = new SimpleDateFormat("h:mm a");
@@ -127,57 +111,7 @@ public class Mirror extends Activity
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
 
-        // Stuff for handling screen brightness
-        Settings.System.putInt(getContentResolver(),
-                Settings.System.SCREEN_BRIGHTNESS_MODE,
-                Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
-
-        SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        Sensor lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
-        hasLightSensor = lightSensor != null;
-        if (lightSensor == null) Toast.makeText(this,"No light sensor available, using clock instead", Toast.LENGTH_LONG).show();
-        else if (dimEnabled)
-        {
-            final float maxLight = lightSensor.getMaximumRange();
-
-            final double fullBright = .4;
-            final double fullDark = .1;
-
-            sensorManager.registerListener(new SensorEventListener()
-            {
-                //Called when sensor gets new values
-                @Override
-                public void onSensorChanged(SensorEvent event)
-                {
-                    if (event.sensor.getType() == Sensor.TYPE_LIGHT)
-                    {
-                        float current = event.values[0];
-
-                        int out;
-                        if (current < fullDark) out = fullDarkLevel;
-                        else if (current > fullBright) out = fullBrightlevel;
-                        else
-                        {
-                            double percent = (current - fullDark) / (fullBright - fullDark);
-                            out = (int) percent * (fullBrightlevel - fullDarkLevel) + fullDarkLevel;
-                        }
-
-                        Log.d(TAG, "Setting brightness to: " + out);
-                        Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, out);
-
-                    }
-                }
-
-                @Override
-                public void onAccuracyChanged(Sensor sensor, int accuracy)
-                {
-
-                }
-            }, lightSensor, SensorManager.SENSOR_DELAY_NORMAL);
-        }
-
-
-
+        dimmer = new Dimmer(getContentResolver());
 
         Location permLoc = null;
         if (getSharedPreferences(getString(R.string.prefs), MODE_PRIVATE).getBoolean(Setup.alwaysPittsburgh, false))
@@ -375,52 +309,6 @@ public class Mirror extends Activity
             else precipTile.setVisibility(View.GONE);
 
         }
-
-
-        if (!hasLightSensor && dimEnabled)
-
-        {
-            // Handle screen dimming stuff
-            long sunset = weather.getSunSet();
-            long sunrise = weather.getSunrise();
-            long now = System.currentTimeMillis() / 1000;
-            int out;
-
-            // Incase something goes wrong, just stay bright
-            if (sunset == -1 || sunrise == -1)
-            {
-                out = fullBrightlevel;
-            }
-            else if (now < sunrise - sunriseOffset) //pre sunrise
-            {
-                out = fullDarkLevel;
-
-            }
-            else if (now < sunrise) //sunrise
-            {
-                double percent = 1 - ((double) sunrise - now) / sunriseOffset;
-                out = (int) (percent * (fullBrightlevel - fullDarkLevel)) + fullDarkLevel;
-
-            }
-            else if (now < sunset) //day
-            {
-                out = fullBrightlevel;
-            }
-            else if (now < sunset + sunsetOffset) //dusk
-            {
-                double percent = ((double)sunset + sunsetOffset - now) / sunsetOffset;
-                out = (int) (percent * (fullBrightlevel - fullDarkLevel)) + fullDarkLevel;
-            }
-            else //night
-            {
-                Log.d(TAG, "Night");
-                out = fullDarkLevel;
-            }
-
-            Log.d(TAG, "Setting brightness to: " + out);
-            Settings.System.putInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, out);
-        }
-
     }
 
     private static void handleCancel()
@@ -519,6 +407,8 @@ public class Mirror extends Activity
         {
             alarmText.setVisibility(View.GONE);
             alarmIcon.setVisibility(View.GONE);
+
+            dimmer.setBright(true);
         }
         //Alarm has been set
         else
@@ -529,6 +419,8 @@ public class Mirror extends Activity
             alarmText.setText(dispString);
             alarmText.setVisibility(View.VISIBLE);
             alarmIcon.setVisibility(View.VISIBLE);
+
+            dimmer.setBright(false);
         }
     }
 
@@ -621,7 +513,6 @@ public class Mirror extends Activity
             }
         }
     }
-
 
     public static class URLCaller extends AsyncTask<String, Void, Void>
     {
