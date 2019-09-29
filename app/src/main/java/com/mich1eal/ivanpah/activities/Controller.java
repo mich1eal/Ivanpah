@@ -42,6 +42,10 @@ public class Controller extends Activity
     private static WebView webView;
     private static LinearLayout alarmFrame, hueFrame, hueTimeFrame;
 
+    private static SharedPreferences settings;
+    public static String lastMin = "LAST_MINUTE";
+    public static String lastHour = "LAST_HOUR";
+
     private static BWrapper bWrap;
     private boolean duoMode = false;
     private long lastTime;
@@ -59,7 +63,6 @@ public class Controller extends Activity
         statusText = (TextView) findViewById(R.id.control_status);
         retryButton = (Button) findViewById(R.id.control_retry);
         sendButton = (Button) findViewById(R.id.control_send);
-        timePick = (TimePicker) findViewById(R.id.control_time_pick);
         cancelButton = (Button) findViewById(R.id.control_cancel);
         settingsButton = (Button) findViewById(R.id.control_settings);
         duoButton = (Button) findViewById(R.id.control_duo);
@@ -71,7 +74,14 @@ public class Controller extends Activity
         hueTimeFrame = (LinearLayout) findViewById(R.id.control_hue_time_frame);
         hueText = (EditText) findViewById(R.id.control_hue_time);
 
-        SharedPreferences settings = getSharedPreferences(getString(R.string.prefs), MODE_PRIVATE);
+        settings = getSharedPreferences(getString(R.string.prefs), MODE_PRIVtimePick = (TimePicker) findViewById(R.id.control_time_pick);ATE);
+
+        timePick = (TimePicker) findViewById(R.id.control_time_pick);
+        if (settings.contains(lastHour) && settings.contains(lastMin)
+        {
+            timePick.setCurrentMinute(settings.getInt(lastMin, );
+            timePick.setCurrentHour(settings.getInt(lastHour, ));
+        }
 
         hueEnabled = settings.getBoolean(Setup.enableHue, false);
 
@@ -136,6 +146,11 @@ public class Controller extends Activity
                 {
                     e.printStackTrace();
                 }
+
+                settings.edit()
+                        .putInt(lastMin, Calendar.MINUTE)
+                        .putInt(lastHour, Calendar.HOUR)
+                        .apply();
 
                 bWrap.write(json.toString());
             }
@@ -236,10 +251,10 @@ public class Controller extends Activity
     }
 
     @Override
-    public void onDestroy()
+    public void onPause()
     {
         bWrap.close();
-        super.onDestroy();
+        super.onPause();
     }
 
     @Override
@@ -256,10 +271,6 @@ public class Controller extends Activity
     private void launchSetup()
     {
         Intent i = new Intent(this, Setup.class);
-        i.setFlags(i.getFlags() | Intent.FLAG_ACTIVITY_NO_HISTORY);
         startActivity(i);
-        finish();
     }
-
-
 }

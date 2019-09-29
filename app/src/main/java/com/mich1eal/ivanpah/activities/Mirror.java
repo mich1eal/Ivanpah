@@ -227,6 +227,7 @@ public class Mirror extends Activity
         int dayCount = c.get(Calendar.DAY_OF_WEEK_IN_MONTH);
 
 
+        /*
         // Birthday
         if (month == Calendar.FEBRUARY && date == 24)
         {
@@ -258,9 +259,10 @@ public class Mirror extends Activity
             messageDisplay.setText("HAPPY\nBIRTHDAY\nDAD!!!\n");
             messageDisplay.setTextSize(75);
             messageDisplay.setVisibility(View.VISIBLE);
-        }
+        }*/
 
-        else
+        //else
+
         {
             allWeather.setVisibility(View.VISIBLE);
             messageDisplay.setVisibility(View.GONE);
@@ -320,7 +322,6 @@ public class Mirror extends Activity
             setRing(false);
             alarm.cancel();
         }
-
     }
 
     private static void startDuolingo()
@@ -436,13 +437,13 @@ public class Mirror extends Activity
     }
 
     @Override
-    public void onDestroy()
+    public void onPause()
     {
         if (bWrap != null)
         {
             bWrap.close();
         }
-        super.onDestroy();
+        super.onPause();
     }
 
     static class BHandler extends Handler

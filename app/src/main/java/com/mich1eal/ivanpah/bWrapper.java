@@ -95,7 +95,6 @@ public class BWrapper
             handler.sendEmptyMessage(newState);
         }
 
-
         // If no bluetooth, don't start searching
         if (newState == STATE_SEARCHING && !hasBluetooth())
         {
@@ -121,16 +120,24 @@ public class BWrapper
         {
             //If a device is found, stop looking for new ones
             Log.d(TAG, "Device found, unregistering receiver");
-            if (!isServer) context.unregisterReceiver(receiver);
+            unregister();
         }
     }
-
 
     public void setAutoReconnect(boolean autoReconnect){this.autoReconnect = autoReconnect;}
 
     private boolean hasBluetooth()
     {
         return (bAdapter != null && bAdapter.isEnabled());
+    }
+
+    public void unregister()
+    {
+        if (receiver != null)
+        {
+            context.unregisterReceiver(receiver);
+            receiver = null;
+        }
     }
 
     private void initServer()
@@ -178,46 +185,47 @@ public class BWrapper
 
         // Otherwise check for new devices
         Log.d(TAG, "No server device paried, searching now");
-        // Set up broadcast adapater
-        receiver = new BroadcastReceiver()
-        {
-            public void onReceive(Context context, Intent intent)
-            {
-                String action = intent.getAction();
-                if (action.equals(BluetoothDevice.ACTION_FOUND)) //device found
-                {
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    if (device != null)
-                    {
-                        Log.d(TAG, "Device found: " + device.toString());
-                        String name = device.getName();
 
-                        if(name != null && name.equals(SERVER_NAME))
-                        {
-                            Log.d(TAG, "New server found: " + name);
-                            searchThread = new ClientThread(device);
-                            searchThread.start();
-                            return;
+        if (receiver != null)
+        {
+            Log.d(TAG, "Receiver is already registered!");
+        }
+        else {
+            //Need to create a reciever
+            receiver = new BroadcastReceiver() {
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    if (action.equals(BluetoothDevice.ACTION_FOUND)) //device found
+                    {
+                        BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                        if (device != null) {
+                            Log.d(TAG, "Device found: " + device.toString());
+                            String name = device.getName();
+
+                            if (name != null && name.equals(SERVER_NAME)) {
+                                Log.d(TAG, "New server found: " + name);
+                                searchThread = new ClientThread(device);
+                                searchThread.start();
+                                return;
+                            }
                         }
+                    } else if (action.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+                            && state != STATE_FOUND
+                            && state != STATE_CONNECTED) {
+                        setState(STATE_DISCONNECTED);
                     }
                 }
-                else if (action.equals(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
-                        && state != STATE_FOUND
-                        && state != STATE_CONNECTED)
-                {
-                    setState(STATE_DISCONNECTED);
-                }
-            }
-        };
+            };
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BluetoothDevice.ACTION_FOUND);
-        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-        context.registerReceiver(receiver, filter);
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(BluetoothDevice.ACTION_FOUND);
+            filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+            context.registerReceiver(receiver, filter);
+
+
+        }
 
         bAdapter.startDiscovery();
-
-        //Log.d(TAG, "No servers found");
     }
 
     public void close()
@@ -225,8 +233,7 @@ public class BWrapper
         Log.d(TAG, "Closing connections");
         setState(STATE_DISCONNECTED);
 
-        // only client registers a receiver
-        if (!isServer) context.unregisterReceiver(receiver);
+        unregister();
     }
 
     // Wraper to hold ServerThread and ClientThread

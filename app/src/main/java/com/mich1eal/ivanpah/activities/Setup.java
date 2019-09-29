@@ -98,10 +98,6 @@ public class Setup extends Activity
             radios.check(radios.getChildAt(checkId).getId());
         }
 
-
-
-
-
         go.setOnClickListener(new View.OnClickListener()
         {
             @Override
@@ -116,7 +112,6 @@ public class Setup extends Activity
                 settings.edit().putBoolean(hasDuo, duoCheck.isChecked()).apply();
                 settings.edit().putBoolean(alwaysPittsburgh, gps.isChecked()).apply();
 
-
                 launchMirror();
             }
         });
@@ -129,5 +124,6 @@ public class Setup extends Activity
 
         Intent i = new Intent(this, mirror ? Mirror.class : Controller.class);
         startActivity(i);
+        finish();
     }
 }

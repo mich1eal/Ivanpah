@@ -114,6 +114,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
                     android:inputType="number"
+                    android:selectAllOnFocus="true"
                     android:text="30"
                     android:id="@+id/control_hue_time"/>
 
@@ -122,7 +123,6 @@
 
 
         </LinearLayout>
-
 
         <LinearLayout
             android:layout_width="wrap_content"

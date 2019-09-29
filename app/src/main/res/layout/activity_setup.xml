@@ -76,11 +76,12 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginLeft="20dp"
+            android:inputType="number"
+            android:digits="0123456789."
             android:hint="IP Address"
             android:visibility="gone"
-            android:id="@+id/setup_hue_ip"/>
-
-
+            android:id="@+id/setup_hue_ip"
+            android:imeOptions="actionDone"/>
 
 
     </LinearLayout>
