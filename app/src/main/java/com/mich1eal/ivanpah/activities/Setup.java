@@ -38,9 +38,6 @@ public class Setup extends Activity
 
         settings = getSharedPreferences(getString(R.string.prefs), MODE_PRIVATE);
 
-
-
-
         boolean isLaunch = getIntent().getAction() == Intent.ACTION_MAIN;
         boolean isSetUp = settings.contains(getString(R.string.config));
         if (isLaunch && isSetUp)
@@ -106,11 +103,12 @@ public class Setup extends Activity
                 //One radio button is pre checked
                 int id = radios.getCheckedRadioButtonId();
                 boolean isMirror = id == 1; //first option is mirror
-                settings.edit().putBoolean(getString(R.string.config), isMirror).apply();
-                settings.edit().putBoolean(enableHue, hue.isChecked()).apply();
-                settings.edit().putString(hueIPStr, hueIP.getText().toString()).apply();
-                settings.edit().putBoolean(hasDuo, duoCheck.isChecked()).apply();
-                settings.edit().putBoolean(alwaysPittsburgh, gps.isChecked()).apply();
+                settings.edit().putBoolean(getString(R.string.config), isMirror)
+                        .putBoolean(enableHue, hue.isChecked())
+                        .putString(hueIPStr, hueIP.getText().toString())
+                        .putBoolean(hasDuo, duoCheck.isChecked())
+                        .putBoolean(alwaysPittsburgh, gps.isChecked())
+                        .apply();
 
                 launchMirror();
             }

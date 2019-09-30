@@ -16,6 +16,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -34,7 +35,8 @@ public class Controller extends Activity
 {
     private static final String TAG = Controller.class.getSimpleName();
 
-    private static TextView statusText;
+    private static TextView statusText, dayBrightLabel, nightBrightLabel;
+    private static SeekBar dayBrightLevel, nightBrightLevel;
     private static Button retryButton, sendButton, cancelButton, duoButton, settingsButton;
     private static TimePicker timePick;
     private static CheckBox duoCheck, hueCheck;
@@ -45,6 +47,11 @@ public class Controller extends Activity
     private static SharedPreferences settings;
     public static String lastMin = "LAST_MINUTE";
     public static String lastHour = "LAST_HOUR";
+    public static String dayBright = "DAY_BRIGHT";
+    public static String nightBright = "NIGHT_BRIGHT";
+
+    private static int dayBrightDefault = 100;
+    private static int nightBrightDefault = 20;
 
     private static BWrapper bWrap;
     private boolean duoMode = false;
@@ -54,13 +61,14 @@ public class Controller extends Activity
     private static String hueIP;
     private static boolean hueEnabled;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_controller);
         statusText = (TextView) findViewById(R.id.control_status);
+        dayBrightLabel = (TextView) findViewById(R.id.dayBrightLabel);
+        nightBrightLabel = (TextView) findViewById(R.id.nightBrightLabel);
         retryButton = (Button) findViewById(R.id.control_retry);
         sendButton = (Button) findViewById(R.id.control_send);
         cancelButton = (Button) findViewById(R.id.control_cancel);
@@ -74,13 +82,67 @@ public class Controller extends Activity
         hueTimeFrame = (LinearLayout) findViewById(R.id.control_hue_time_frame);
         hueText = (EditText) findViewById(R.id.control_hue_time);
 
-        settings = getSharedPreferences(getString(R.string.prefs), MODE_PRIVtimePick = (TimePicker) findViewById(R.id.control_time_pick);ATE);
+        settings = getSharedPreferences(getString(R.string.prefs), MODE_PRIVATE);
+
+        //Initialize prefs for brightness
+        if (!settings.contains(dayBright))
+        {
+            settings.edit().putInt(dayBright, dayBrightDefault).apply();
+        }
+        if (!settings.contains(nightBright))
+        {
+            settings.edit().putInt(nightBright, nightBrightDefault).apply();
+        }
+
+        //Initialize brightness sliders
+        dayBrightLevel = (SeekBar) findViewById(R.id.dayBrightLevel);
+        dayBrightLevel.setProgress(settings.getInt(dayBright, 20));
+        dayBrightLevel.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener()
+        {
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
+            {
+                settings.edit().putInt(dayBright, progress).apply();
+
+            }
+        });
+
+        nightBrightLevel = (SeekBar) findViewById(R.id.nightBrightLevel);
+        nightBrightLevel.setProgress(settings.getInt(nightBright, 20));
+        nightBrightLevel.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener()
+        {
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
+            {
+                settings.edit().putInt(nightBright, progress).apply();
+
+            }
+        });
+
+
+
 
         timePick = (TimePicker) findViewById(R.id.control_time_pick);
-        if (settings.contains(lastHour) && settings.contains(lastMin)
+        if (settings.contains(lastHour) && settings.contains(lastMin))
         {
-            timePick.setCurrentMinute(settings.getInt(lastMin, );
-            timePick.setCurrentHour(settings.getInt(lastHour, ));
+            timePick.setCurrentMinute(settings.getInt(lastMin, 1));
+            timePick.setCurrentHour(settings.getInt(lastHour, 1));
         }
 
         hueEnabled = settings.getBoolean(Setup.enableHue, false);
@@ -109,8 +171,6 @@ public class Controller extends Activity
                 }
             }
         });
-
-
 
         retryButton.setOnClickListener(new View.OnClickListener()
         {
@@ -148,8 +208,8 @@ public class Controller extends Activity
                 }
 
                 settings.edit()
-                        .putInt(lastMin, Calendar.MINUTE)
-                        .putInt(lastHour, Calendar.HOUR)
+                        .putInt(lastMin, cal.get(Calendar.MINUTE))
+                        .putInt(lastHour, cal.get(Calendar.HOUR_OF_DAY))
                         .apply();
 
                 bWrap.write(json.toString());
@@ -185,7 +245,6 @@ public class Controller extends Activity
                     webView.setVisibility(View.GONE);
                     duoButton.setText(R.string.control_launch_duo);
                 }
-
             }
         });
 
@@ -220,6 +279,7 @@ public class Controller extends Activity
         {
             Log.d(TAG, "Message recieved: " + inputMessage.what);
             int msg = R.string.status_error;
+            boolean connected = false;
             switch (inputMessage.what)
             {
                 case BWrapper.STATE_SEARCHING:
@@ -229,6 +289,7 @@ public class Controller extends Activity
                 case BWrapper.STATE_CONNECTED:
                     msg = R.string.status_connect;
                     retryButton.setEnabled(false);
+                    connected = true;
                     break;
                 case BWrapper.STATE_NO_BLUETOOTH:
                     msg = R.string.status_no_bluetooth;
@@ -246,6 +307,22 @@ public class Controller extends Activity
                     msg = R.string.status_error;
                     retryButton.setEnabled(true);
             }
+
+            if (connected)
+            {
+                dayBrightLabel.setEnabled(true);
+                nightBrightLabel.setEnabled(true);
+                dayBrightLevel.setEnabled(true);
+                nightBrightLevel.setEnabled(true);
+            }
+            else
+            {
+                dayBrightLabel.setEnabled(false);
+                nightBrightLabel.setEnabled(false);
+                dayBrightLevel.setEnabled(false);
+                nightBrightLevel.setEnabled(false);
+            }
+
             statusText.setText(msg);
         }
     }

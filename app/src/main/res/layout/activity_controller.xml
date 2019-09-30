@@ -1,17 +1,16 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:orientation="vertical"
-                android:padding="10dp"
-              tools:context=".controller">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="10dp"
+    tools:context=".controller">
 
     <RelativeLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:layout_gravity="left"
-        android:layout_marginBottom="30dp">
+        android:layout_gravity="left">
 
         <TextView
             android:layout_width="wrap_content"
@@ -44,18 +43,19 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
-            android:layout_below="@id/control_retry"
-            android:layout_marginLeft="15dp"
-            android:id="@+id/control_duo"
-            android:text="@string/control_launch_duo"/>
+            android:layout_alignParentRight="true"
+            android:id="@+id/control_settings"
+            android:text="@string/control_settings"/>
 
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
-            android:id="@+id/control_settings"
-            android:text="@string/control_settings"/>
+            android:layout_alignParentLeft="true"
+            android:layout_below="@id/control_retry"
+            android:layout_marginLeft="15dp"
+            android:visibility="gone"
+            android:id="@+id/control_duo"
+            android:text="@string/control_launch_duo"/>
     </RelativeLayout>
 
     <LinearLayout
@@ -77,8 +77,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/control_enable_duolingo"
-            android:id="@+id/control_duo_check"
-            android:layout_margin="5dp"/>
+            android:id="@+id/control_duo_check"/>
 
         <!-- Stuff for hue, invisble by default -->
         <LinearLayout
@@ -93,7 +92,6 @@
                 android:layout_height="wrap_content"
                 android:text="Use Phillips Hue"
                 android:id="@+id/control_hue_check"
-                android:layout_margin="5dp"
                 android:checked="true"/>
 
             <LinearLayout
@@ -120,8 +118,49 @@
 
 
             </LinearLayout>
+        </LinearLayout>
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Day brightness"
+                android:id="@+id/dayBrightLabel"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="9dp"
+                android:enabled="false"/>
+
+            <SeekBar
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/dayBrightLevel"
+                android:layout_gravity="center_vertical"
+                android:enabled="false"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Night brightness"
+                android:id="@+id/nightBrightLabel"
+                android:layout_gravity="center_vertical"
+                android:enabled="false"/>
+
+            <SeekBar
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/nightBrightLevel"
+                android:layout_gravity="center_vertical"
+                android:enabled="false"/>
         </LinearLayout>
 
         <LinearLayout
@@ -144,8 +183,8 @@
                 android:id="@+id/control_cancel"
                 android:text="@string/control_cancel"
                 android:layout_margin="10dp"/>
-
         </LinearLayout>
+
 
     </LinearLayout>
 
