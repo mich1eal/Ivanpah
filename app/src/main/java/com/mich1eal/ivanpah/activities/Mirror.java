@@ -48,10 +48,6 @@ public class Mirror extends Activity
     private final static double minRainDisplay = .1; //Minimum threshold for displaying rain prob
     private final static int DUO_SNOOZE = 2; // Minutes to snooze each time a heartbeat is recieved
 
-    private final static String HUE_URL_BASE = "http://";
-    private final static String HUE_URL_END1 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/2/state";
-    private final static String HUE_URL_END2 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/3/state";
-
     private static String hueIP;
     private static int defaultMinsToHue = 20;
     public static int hueMins = defaultMinsToHue;
@@ -66,14 +62,7 @@ public class Mirror extends Activity
     private static MirrorAlarm alarm;
     private static Dimmer dimmer;
 
-    private static boolean hasLightSensor;
-    private static boolean dimEnabled = false;
-
-    private static boolean activeDuo = false, upcomingDuo = false, hasDuo = true;
-
-    // Offsets between sunsets and sunrise for dimming purposes, in seconds
-    private static long sunriseOffset = 60 * 60;
-    private static long sunsetOffset = 120 * 60;
+    private static boolean activeDuo = false, upcomingDuo = false;
 
     static SharedPreferences preferences;
 
@@ -226,7 +215,6 @@ public class Mirror extends Activity
         int day = c.get(Calendar.DAY_OF_WEEK);
         int dayCount = c.get(Calendar.DAY_OF_WEEK_IN_MONTH);
 
-
         /*
         // Birthday
         if (month == Calendar.FEBRUARY && date == 24)
@@ -371,8 +359,6 @@ public class Mirror extends Activity
             displayAlarm(null);
         }
     }
-
-
     private Calendar getSavedAlarmTime()
     {
         long alarmTime = preferences.getLong(PREFS_ALARM, -1);
@@ -409,7 +395,7 @@ public class Mirror extends Activity
             alarmText.setVisibility(View.GONE);
             alarmIcon.setVisibility(View.GONE);
 
-            dimmer.setBright(true);
+            dimmer.setBright(true, preferences);
         }
         //Alarm has been set
         else
@@ -421,8 +407,13 @@ public class Mirror extends Activity
             alarmText.setVisibility(View.VISIBLE);
             alarmIcon.setVisibility(View.VISIBLE);
 
-            dimmer.setBright(false);
+            dimmer.setBright(false, preferences);
         }
+    }
+
+    private static void setBrightness(boolean bright, int value)
+    {
+        dimmer.updateBrightness(preferences, value, bright);
     }
 
     @Override
@@ -468,6 +459,10 @@ public class Mirror extends Activity
                     int tempHueTime = -1;
                     long tempAlarmTime = -1;
 
+                    int tempBrightLevel = -1;
+                    boolean bright = false;
+
+
                     JSONObject json;
                     try
                     {
@@ -476,40 +471,59 @@ public class Mirror extends Activity
                         if (json.has(BWrapper.username)) tempDuoUserName = json.getString(BWrapper.username);
                         if (json.has(BWrapper.hueTime)) tempHueTime = json.getInt(BWrapper.hueTime);
                         if (json.has(BWrapper.hueIP)) tempHueIP = json.getString(BWrapper.hueIP);
+                        if (json.has(BWrapper.dayBright))
+                        {
+                            tempBrightLevel = json.getInt(BWrapper.dayBright);
+                            bright = true;
+                        }
+                        if (json.has(BWrapper.nightBright))
+                        {
+                            tempBrightLevel = json.getInt(BWrapper.nightBright);
+                            bright = false;
+                        }
+
                     }
                     catch (Exception e)
                     {
                         e.printStackTrace();
                     }
 
-                    if (!activeDuo)
+                    if (tempBrightLevel != -1)
                     {
-                        if (tempHueIP != null)
-                        {
-                            hueIP = tempHueIP;
-                            hueMins = tempHueTime;
-                        }
-                        else
-                        {
-                            hueIP = null;
-                            hueMins = -1;
-                        }
-
-                        if (tempDuoUserName != null)
-                        {
-                            upcomingDuo = true;
-                            duolingo.setUsername(tempDuoUserName);
-                        }
-                        else
-                        {
-                            upcomingDuo = false;
-                        }
-
-                        final Calendar cal = Calendar.getInstance();
-                        cal.setTimeInMillis(tempAlarmTime);
-                        setAlarm(cal);
+                        Log.d(TAG, "Temp bright level = " + tempBrightLevel);
+                        setBrightness(bright, tempBrightLevel);
                     }
 
+                    if (tempAlarmTime != -1)
+                    {
+                        if (!activeDuo)
+                        {
+                            if (tempHueIP != null)
+                            {
+                                hueIP = tempHueIP;
+                                hueMins = tempHueTime;
+                            }
+                            else
+                            {
+                                hueIP = null;
+                                hueMins = -1;
+                            }
+
+                            if (tempDuoUserName != null)
+                            {
+                                upcomingDuo = true;
+                                duolingo.setUsername(tempDuoUserName);
+                            }
+                            else
+                            {
+                                upcomingDuo = false;
+                            }
+
+                            final Calendar cal = Calendar.getInstance();
+                            cal.setTimeInMillis(tempAlarmTime);
+                            setAlarm(cal);
+                        }
+                    }
                 }
             }
         }
@@ -550,7 +564,5 @@ public class Mirror extends Activity
             return null;
 
         }
-
     }
-
 }

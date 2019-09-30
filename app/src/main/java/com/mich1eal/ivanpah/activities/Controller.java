@@ -111,7 +111,7 @@ public class Controller extends Activity
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
             {
                 settings.edit().putInt(dayBright, progress).apply();
-
+                sendBright(BWrapper.dayBright, progress);
             }
         });
 
@@ -131,12 +131,9 @@ public class Controller extends Activity
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
             {
                 settings.edit().putInt(nightBright, progress).apply();
-
+                sendBright(BWrapper.nightBright, progress);
             }
         });
-
-
-
 
         timePick = (TimePicker) findViewById(R.id.control_time_pick);
         if (settings.contains(lastHour) && settings.contains(lastMin))
@@ -271,6 +268,21 @@ public class Controller extends Activity
         webView.getSettings().setUserAgentString("Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/20100101 Firefox/4.0");
         webView.loadUrl("https://www.duolingo.com");
     }
+
+    private void sendBright(String brightKey, int brightValue)
+    {
+        JSONObject json = new JSONObject();
+        try
+        {
+            json.put(brightKey, brightValue);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        bWrap.write(json.toString());
+    }
+
 
     static class BHandler extends Handler
     {

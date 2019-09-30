@@ -2,6 +2,7 @@ package com.mich1eal.ivanpah;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -12,11 +13,15 @@ import android.util.Log;
 
 public class Dimmer
 {
-    private static final String TAG = "MIRROR";
+    private static final String TAG = "DIMMER";
     private static ContentResolver contentResolver;
-    private static int fullDarkLevel = 0;
-    private static int fullBrightlevel = 255;
+    private static int defaultNight = 20;
+    private static int defaultDay = 100;
 
+    private static boolean isBright = true;
+
+    private static String dayLevel = "DAY_LEVEL";
+    private static String nightLevel = "NIGHT_LEVEL";
 
     public Dimmer(ContentResolver contentResolver)
     {
@@ -27,7 +32,19 @@ public class Dimmer
                 Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
     }
 
-    public void setBright(boolean bright)
+    public void updateBrightness(SharedPreferences prefs, int value, boolean bright)
+    {
+        if (bright) prefs.edit().putInt(dayLevel, value).apply();
+        else prefs.edit().putInt(nightLevel, value).apply();
+
+        // if updating the value that is currently displayed, update the display
+        if (bright == isBright)
+        {
+            setBright(bright, prefs);
+        }
+    }
+
+    public void setBright(boolean bright, SharedPreferences prefs)
     {
         if(contentResolver == null)
         {
@@ -35,8 +52,18 @@ public class Dimmer
             return;
         }
 
-        if (bright) Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS, fullBrightlevel);
-        else Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS, fullDarkLevel);
+        int brightness;
+        if (bright)
+        {
+            brightness = prefs.getInt(dayLevel, defaultDay);
+        }
+        else
+        {
+            brightness = prefs.getInt(nightLevel, defaultNight);
+        }
+
+        Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS, brightness * 255 / 100);
+        isBright = bright;
     }
 
 

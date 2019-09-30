@@ -33,6 +33,8 @@ public class BWrapper
     public static final String hueIP = "HUE_IP";
     public static final String hueTime = "HUE_TIME";
 
+    public static final String dayBright = "DAY_BRIGHT";
+    public static final String nightBright = "NIGHT_BRIGHT";
 
     public static final int MESSAGE_READ = 99;
     public static final String MESSAGE_CANCEL = "cancel";
