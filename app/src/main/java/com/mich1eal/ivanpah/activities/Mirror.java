@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -52,7 +53,7 @@ public class Mirror extends Activity
     private static int defaultMinsToHue = 20;
     public static int hueMins = defaultMinsToHue;
 
-    private static TextView temp, max, min, icon,precipType, precipPercent, alarmIcon, alarmText, messageDisplay;
+    private static TextView temp, max, min, icon, precipType, precipPercent, alarmIcon, alarmText, messageDisplay;
     private static LinearLayout precipTile, allWeather;
 
     private static Typeface weatherFont, iconFont, defaultFont;
@@ -81,8 +82,6 @@ public class Mirror extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mirror);
 
-        Boolean hasDuo = getSharedPreferences(getString(R.string.prefs), MODE_PRIVATE).getBoolean(Setup.hasDuo, true);
-
         // Initialize views that will need to be updated
         temp = (TextView) findViewById(R.id.temp);
         max = (TextView) findViewById(R.id.max);
@@ -99,24 +98,34 @@ public class Mirror extends Activity
         // Set up shared preferences for alarm saving
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-
         dimmer = new Dimmer(getContentResolver());
 
-        Location permLoc = null;
-        if (getSharedPreferences(getString(R.string.prefs), MODE_PRIVATE).getBoolean(Setup.alwaysPittsburgh, false))
+        //Initialize weather
+        weather = new Weather(this);
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (locationManager != null)
         {
-            permLoc = new Location("Pittsburgh");
-            // These are values for Pittsburgh PA
-            //permLoc.setLatitude(40.4406);
-            //permLoc.setLongitude(-79.9959);
+            locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, new LocationListener(){
 
-            // These for Indy
-            permLoc.setLatitude(39.7739318);
-            permLoc.setLongitude(-86.15002229999999);
+                @Override
+                public void onLocationChanged(Location location)
+                {
+                    Log.d(TAG, "onLocationChanged");
+                    if (location != null)
+                    {
+                        weather.setLocation(location);
+                    }
+
+                }
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {}
+                @Override
+                public void onProviderEnabled(String provider) {}
+                @Override
+                public void onProviderDisabled(String provider) {}
+            }, null);
         }
-
-        // Initialize data fetchers
-        weather = new Weather((LocationManager) getSystemService(LOCATION_SERVICE), this, permLoc);
+        weather.setAutoUpdate(new Handler(), weatherDelay);
 
         // Initialize fonts
         defaultFont = icon.getTypeface();
@@ -126,13 +135,6 @@ public class Mirror extends Activity
         // Initialize constant fonts
         precipType.setTypeface(weatherFont);
         alarmIcon.setTypeface(iconFont);
-
-        weather.setAutoUpdate(new Handler(), weatherDelay);
-
-
-        // ***************************** DUOLINGO ONLY *****************************
-        /* EVERYTHING BELOW HERE WILL ONLY HAPPEN IF DUOLINGO IS ENABLED IN SETTINGS */
-        if (!hasDuo) return;
 
         duolingo = new Duolingo();
         duolingo.setOnStreakListener(new Duolingo.OnNewStreakListener()
@@ -182,7 +184,6 @@ public class Mirror extends Activity
 
             Log.d(TAG, "No alarm found");
         }
-
 
         // Setup broadcast receiver for alarm updates
         BroadcastReceiver uiReceiver = new BroadcastReceiver()
@@ -419,10 +420,10 @@ public class Mirror extends Activity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data)
     {
-        Log.d("MIRROR", "onActivityResult");
+        Log.d(TAG, "onActivityResult");
         if (requestCode == BWrapper.BLUETOOTH_RESPONSE && resultCode == BWrapper.BLUETOOTH_OK)
         {
-            Log.d("MIRROR", "Bluetooth enabled");
+            Log.d(TAG, "Bluetooth enabled");
             bWrap.onServerInit();
         }
     }

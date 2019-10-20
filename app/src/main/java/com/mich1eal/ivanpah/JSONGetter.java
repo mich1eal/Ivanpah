@@ -37,6 +37,7 @@ public abstract class JSONGetter
     // Sets up JSON getter to automatically refresh data
     public void setAutoUpdate(final Handler handler, long repeatTime)
     {
+        Log.d(TAG, "Setting autoUpdate for weather");
         getNewData();
         TimerTask timerTask = getTimerTask(handler);
         timer = new Timer();

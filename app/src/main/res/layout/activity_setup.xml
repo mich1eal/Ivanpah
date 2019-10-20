@@ -33,30 +33,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
+            android:id="@+id/setup_radio_mirror"
             android:text="@string/setup_mirror"
             android:textColor="@android:color/white"/>
         <RadioButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_margin="5dp"
+            android:id="@+id/setup_radio_controller"
             android:text="@string/setup_phone"
             android:textColor="@android:color/white"/>
     </RadioGroup>
-
-    <CheckBox
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="5dp"
-        android:id="@+id/setup_duo"
-        android:text="Enable Duolingo"/>
-
-    <CheckBox
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="5dp"
-        android:id="@+id/setup_gps"
-        android:text="Always Pittsburgh"
-        />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -82,12 +69,32 @@
             android:visibility="gone"
             android:id="@+id/setup_hue_ip"
             android:imeOptions="actionDone"/>
-
-
     </LinearLayout>
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
 
+        <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="5dp"
+            android:id="@+id/setup_duo"
+            android:text="Enable Duolingo"
+            />
 
+        <EditText
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="20dp"
+            android:inputType="textNoSuggestions"
+            android:hint="Username"
+            android:visibility="gone"
+            android:id="@+id/setup_duo_user"
+            android:imeOptions="actionDone"/>
+    </LinearLayout>
 
     <Button
         android:layout_width="wrap_content"

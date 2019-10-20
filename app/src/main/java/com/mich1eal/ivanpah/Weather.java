@@ -16,11 +16,9 @@ public class Weather
 {
     private static final String TAG = "WEATHER";
     private static final String APIKey = "310a6b004645167adf0d695576d45819";
-    private LocationManager lm = null;
     private WeatherUpdateListener listener;
 
-    private Location lastLoc = null;
-    private Location permLoc = null;
+    private Location location = null;
     private JSONObject lastJSON = null;
 
     private boolean hasValues = false;
@@ -36,13 +34,22 @@ public class Weather
 
     private Weather(){}
 
-    public Weather(LocationManager manager, WeatherUpdateListener listener, Location permLoc)
+    public Weather(WeatherUpdateListener listener)
     {
-        lm = manager;
         this.listener = listener;
-        this.permLoc = permLoc;
-        this.lastLoc = permLoc;
+        if(location == null)
+        {
+            Log.e(TAG, "Location is null");
+        }
     }
+
+    public void setLocation(Location location)
+    {
+        if(location == null) Log.e(TAG, "Location is null");
+        this.location = location;
+        getNewData();
+    }
+
 
     public int getTemp(){return temp;}
     public int getMin(){return min;}
@@ -66,31 +73,12 @@ public class Weather
     @Override
     protected void getNewData()
     {
-        if (permLoc == null)
-        {
-            Location loc = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if (loc != null)
-            {
-                Log.d(TAG, "Location = " + loc.toString());
-                lastLoc = loc;
-            }
-
-            if (lastLoc == null)
-            {
-                Log.e(TAG, "No location available");
-                return;
-            }
-        }
-        else
-        {
-            lastLoc = permLoc;
-        }
+        if (location == null) return;
 
         String apiurl = "https://api.darksky.net/forecast/" +
                 APIKey + '/' +
-                lastLoc.getLatitude() + ',' +
-                lastLoc.getLongitude();
-
+                location.getLatitude() + ',' +
+                location.getLongitude();
         super.getJSON(apiurl);
     }
 
@@ -172,8 +160,6 @@ public class Weather
         {
             Log.e(TAG, e.getMessage());
         }
-
-
     }
 
     public interface WeatherUpdateListener

@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.annotation.IdRes;
 import android.text.InputType;
 import android.util.Log;
 import android.view.View;
@@ -23,13 +24,13 @@ public class Setup extends Activity
 {
     private static RadioGroup radios;
     private static SharedPreferences settings;
-    private static CheckBox duoCheck, gps, hue;
-    private static EditText hueIP;
+    private static CheckBox hue, duo;
+    private static EditText hueIP, duoUsername;
 
-    public static String hasDuo = "HAS_DUO";
-    public static String alwaysPittsburgh = "ALWAYAS_PITTSBURGH";
     public static String enableHue = "ENABLE_HUE";
+    public static String enableDuo = "ENABLE_DUO";
     public static String hueIPStr = "HUE_IP_STRING";
+    public static String duoUNStr = "DUOLINGO_USERNAME";
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -50,11 +51,8 @@ public class Setup extends Activity
         setContentView(R.layout.activity_setup);
         Button go = (Button) findViewById(R.id.setup_go);
         radios = (RadioGroup) findViewById(R.id.setup_radio);
-        radios.check(radios.getChildAt(0).getId()); //Set first option selected by default
         TextView welcome = (TextView) findViewById(R.id.setup_welcome);
 
-        duoCheck = (CheckBox) findViewById(R.id.setup_duo);
-        gps = (CheckBox) findViewById(R.id.setup_gps);
         hue = (CheckBox) findViewById(R.id.setup_hue);
         hueIP = (EditText) findViewById(R.id.setup_hue_ip);
 
@@ -75,25 +73,62 @@ public class Setup extends Activity
            });
 
 
+        duo = (CheckBox) findViewById(R.id.setup_duo);
+        duoUsername = (EditText) findViewById(R.id.setup_duo_user);
+
+        duo.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                duoUsername.setVisibility(View.VISIBLE);
+                if(isChecked)
+                {
+                    duoUsername.setVisibility(View.VISIBLE);
+                }
+                else
+                {
+                    duoUsername.setText("");
+                    duoUsername.setVisibility(View.GONE);
+                }
+            }
+        });
+
+        radios.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup group, @IdRes int checkedId) {
+
+                if (checkedId == R.id.setup_radio_mirror)
+                {
+                    hue.setVisibility(View.GONE);
+                    hueIP.setVisibility(View.GONE);
+                    duo.setVisibility(View.GONE);
+                    duoUsername.setVisibility(View.GONE);
+                }
+                else if (checkedId == R.id.setup_radio_controller)
+                {
+                    hue.setVisibility(View.VISIBLE);
+                    duo.setVisibility(View.VISIBLE);
+                    if (hue.isChecked()) hueIP.setVisibility(View.VISIBLE);
+                    if (duo.isChecked()) duoUsername.setVisibility(View.VISIBLE);
+                }
+            }
+        });
+
+
         if (!isLaunch) welcome.setVisibility(View.GONE); //if not launch, hide the welcome message
 
         // set presets if available
-
         //checked if hue enabled, unchecked by default
         hue.setChecked(settings.getBoolean(enableHue, false));
+        duo.setChecked(settings.getBoolean(enableDuo, false));
 
         //set hue IP unless its null
         hueIP.setText(settings.getString(hueIPStr, ""));
+        duoUsername.setText(settings.getString(duoUNStr, ""));
 
-        duoCheck.setChecked(settings.getBoolean(hasDuo, false));
-
-        gps.setChecked(settings.getBoolean(alwaysPittsburgh, false));
-
-        if (settings.contains(getString(R.string.config)))
-        {
-            int checkId = settings.getBoolean(getString(R.string.config), false) ? 0 : 1;
-            radios.check(radios.getChildAt(checkId).getId());
-        }
+        // set radios to mirror by default
+        boolean isMirror = settings.getBoolean(getString(R.string.config), true);
+        if (isMirror) radios.check(R.id.setup_radio_mirror);
+        else radios.check(R.id.setup_radio_controller);
 
         go.setOnClickListener(new View.OnClickListener()
         {
@@ -102,14 +137,13 @@ public class Setup extends Activity
             {
                 //One radio button is pre checked
                 int id = radios.getCheckedRadioButtonId();
-                boolean isMirror = id == 1; //first option is mirror
+                boolean isMirror = id == R.id.setup_radio_mirror; //first option is mirror
                 settings.edit().putBoolean(getString(R.string.config), isMirror)
                         .putBoolean(enableHue, hue.isChecked())
-                        .putString(hueIPStr, hueIP.getText().toString())
-                        .putBoolean(hasDuo, duoCheck.isChecked())
-                        .putBoolean(alwaysPittsburgh, gps.isChecked())
+                        .putBoolean(enableDuo, duo.isChecked())
                         .apply();
-
+                if (hue.isChecked()) settings.edit().putString(hueIPStr, hueIP.getText().toString()).apply();
+                if (duo.isChecked()) settings.edit().putString(duoUNStr, duoUsername.getText().toString()).apply();
                 launchMirror();
             }
         });

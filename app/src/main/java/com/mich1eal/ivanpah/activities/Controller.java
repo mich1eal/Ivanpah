@@ -58,8 +58,8 @@ public class Controller extends Activity
     private long lastTime;
     private long heartbeatDelay = 3 * 1000; //Amount of time between heartbeats, in millis
 
-    private static String hueIP;
-    private static boolean hueEnabled;
+    private static String hueIP, duoUsername;
+    private static boolean hueEnabled, duoEnabled;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -142,17 +142,25 @@ public class Controller extends Activity
             timePick.setCurrentHour(settings.getInt(lastHour, 1));
         }
 
-        hueEnabled = settings.getBoolean(Setup.enableHue, false);
-
         Typeface iconFont = Typeface.createFromAsset(getAssets(), "fonts/heydings_icons.ttf");
         settingsButton.setTypeface(iconFont);
 
+        hueEnabled = settings.getBoolean(Setup.enableHue, false);
+        duoEnabled = settings.getBoolean(Setup.enableDuo, false);
+
         if (hueEnabled)
         {
-            hueIP = settings.getString(Setup.hueIPStr, "NONE");
+            hueIP = settings.getString(Setup.hueIPStr, "not set");
             hueFrame.setVisibility(View.VISIBLE);
             hueCheck.setText("Use Phillips Hue (IP: " + hueIP + ")");
         }
+        if (duoEnabled)
+        {
+            duoUsername = settings.getString(Setup.duoUNStr, "username not set");
+            duoCheck.setVisibility(View.VISIBLE);
+            duoCheck.setText("Duolingo on Wakeup (" + duoUsername + ")");
+        }
+
 
         hueCheck.setOnCheckedChangeListener(new CheckBox.OnCheckedChangeListener() {
             @Override
@@ -192,8 +200,11 @@ public class Controller extends Activity
                 try
                 {
                     json.put(BWrapper.alarmTime, cal.getTimeInMillis());
-                    if (duoCheck.isChecked()) json.put(BWrapper.username, "mich1eal");
-                    if (hueEnabled)
+                    if (duoEnabled && duoCheck.isChecked())
+                    {
+                        json.put(BWrapper.username, duoUsername);
+                    }
+                    if (hueEnabled && hueCheck.isChecked())
                     {
                         json.put(BWrapper.hueIP, hueIP);
                         json.put(BWrapper.hueTime, Integer.valueOf(hueText.getText().toString()));
