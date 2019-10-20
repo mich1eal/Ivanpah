@@ -54,7 +54,7 @@ public class Mirror extends Activity
     public static int hueMins = defaultMinsToHue;
 
     private static TextView temp, max, min, icon, precipType, precipPercent, alarmIcon, alarmText, messageDisplay;
-    private static LinearLayout precipTile, allWeather;
+    private static LinearLayout precipTile, allWeather, mirrorRoot;
 
     private static Typeface weatherFont, iconFont, defaultFont;
     private static BWrapper bWrap;
@@ -94,6 +94,7 @@ public class Mirror extends Activity
         alarmText = (TextView) findViewById(R.id.alarmText);
         messageDisplay = (TextView) findViewById(R.id.messageView);
         allWeather = (LinearLayout) findViewById(R.id.allWeather);
+        mirrorRoot = (LinearLayout) findViewById(R.id.mirror_root) ;
 
         // Set up shared preferences for alarm saving
         preferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -397,6 +398,7 @@ public class Mirror extends Activity
             alarmIcon.setVisibility(View.GONE);
 
             dimmer.setBright(true, preferences);
+
         }
         //Alarm has been set
         else
