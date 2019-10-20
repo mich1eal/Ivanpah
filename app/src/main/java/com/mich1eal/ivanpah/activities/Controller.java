@@ -300,7 +300,7 @@ public class Controller extends Activity
         @Override
         public void handleMessage(Message inputMessage)
         {
-            Log.d(TAG, "Message recieved: " + inputMessage.what);
+            //Log.d(TAG, "Message recieved: " + inputMessage.what);
             int msg = R.string.status_error;
             boolean connected = false;
             switch (inputMessage.what)
@@ -364,7 +364,11 @@ public class Controller extends Activity
     @Override
     public void onResume()
     {
-        if (bWrap != null) bWrap.connect();
+        if (bWrap != null && bWrap.getState() == bWrap.STATE_DISCONNECTED)
+        {
+                bWrap.connect();
+        }
+
         super.onResume();
     }
 

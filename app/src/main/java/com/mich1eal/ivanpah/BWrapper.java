@@ -84,9 +84,22 @@ public class BWrapper
         setState(STATE_SEARCHING);
     }
 
+    public int getState()
+    {
+        return state;
+    }
+
+
     private void setState(int state)
     {
+
         final int newState = state;
+        if (newState == this.state)
+        {
+            Log.d(TAG, "Set state: " + state + ". State is already set, no action.");
+            return;
+        }
+
         this.state = newState;
 
         Log.d(TAG, "setState: " + newState);
@@ -146,7 +159,6 @@ public class BWrapper
     {
         bAdapter.setName(SERVER_NAME);
         Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        enableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);
         ((Activity) context).startActivityForResult(enableIntent, BLUETOOTH_RESPONSE);
     }
 
@@ -169,22 +181,19 @@ public class BWrapper
         ArrayList<BluetoothDevice> pairedDevices = new ArrayList<BluetoothDevice>();
         pairedDevices.addAll(bAdapter.getBondedDevices());
 
-        // Look for prepaired servers
-        if (pairedDevices.size() > 0)
+        for (BluetoothDevice device : pairedDevices)
         {
-            BluetoothDevice device = pairedDevices.get(0);
-            Log.d(TAG, "Found a pre-paired device: " + device.toString());
-
             String name = device.getName();
-            if (name != null && name.equals(SERVER_NAME))
+            //Log.d(TAG, "Found a pre-paired device: " + name);
+
+            if (name != null && device.getName().equals(SERVER_NAME))
             {
-                Log.d(TAG, "Prepaired server found: " + device.toString());
+                Log.d(TAG, "Pre-paired server found: " + device.toString());
                 searchThread = new ClientThread(device);
                 searchThread.start();
                 return;
             }
         }
-
         // Otherwise check for new devices
         Log.d(TAG, "No server device paried, searching now");
 
@@ -201,7 +210,7 @@ public class BWrapper
                     {
                         BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                         if (device != null) {
-                            Log.d(TAG, "Device found: " + device.toString());
+                            //Log.d(TAG, "Device found: " + device.toString());
                             String name = device.getName();
 
                             if (name != null && name.equals(SERVER_NAME)) {
