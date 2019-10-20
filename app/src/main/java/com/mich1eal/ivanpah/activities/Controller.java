@@ -337,6 +337,8 @@ public class Controller extends Activity
                 nightBrightLabel.setEnabled(true);
                 dayBrightLevel.setEnabled(true);
                 nightBrightLevel.setEnabled(true);
+                sendButton.setEnabled(true);
+                cancelButton.setEnabled(true);
             }
             else
             {
@@ -344,6 +346,8 @@ public class Controller extends Activity
                 nightBrightLabel.setEnabled(false);
                 dayBrightLevel.setEnabled(false);
                 nightBrightLevel.setEnabled(false);
+                sendButton.setEnabled(false);
+                cancelButton.setEnabled(false);
             }
 
             statusText.setText(msg);
@@ -355,6 +359,13 @@ public class Controller extends Activity
     {
         bWrap.close();
         super.onPause();
+    }
+
+    @Override
+    public void onResume()
+    {
+        if (bWrap != null) bWrap.connect();
+        super.onResume();
     }
 
     @Override
