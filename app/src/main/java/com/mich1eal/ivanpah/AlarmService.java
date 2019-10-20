@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
@@ -46,8 +48,13 @@ public class AlarmService extends Service implements MediaPlayer.OnPreparedListe
 
         try {
             mediaPlayer.reset();
-            AssetFileDescriptor afd = getAssets().openFd("river.mp3");
-            mediaPlayer.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+
+            Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+            if (alarmUri == null)
+            {
+                alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            }
+            mediaPlayer.setDataSource(this, alarmUri);
             mediaPlayer.setLooping(true);
         }
 
