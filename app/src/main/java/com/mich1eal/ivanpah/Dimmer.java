@@ -10,7 +10,6 @@ import android.util.Log;
  * Created by msmil on 6/4/2019.
  */
 
-
 public class Dimmer
 {
     private static final String TAG = "DIMMER";
@@ -65,8 +64,6 @@ public class Dimmer
         Settings.System.putInt(contentResolver, Settings.System.SCREEN_BRIGHTNESS, brightness * 255 / 100);
         isBright = bright;
     }
-
-
 
     /*
     if (!hasLightSensor && dimEnabled)
@@ -157,6 +154,4 @@ public class Dimmer
             }
         }, lightSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }*/
-
-
 }

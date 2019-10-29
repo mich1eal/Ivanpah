@@ -124,6 +124,5 @@ public abstract class JSONGetter
             if (json == null) Log.e(TAG, "Json is null");
             else onComplete(json);
         }
-
     }
 }

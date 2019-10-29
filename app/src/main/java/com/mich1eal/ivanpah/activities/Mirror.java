@@ -80,6 +80,7 @@ public class Mirror extends Activity
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_mirror);
 
         // Initialize views that will need to be updated
@@ -97,7 +98,7 @@ public class Mirror extends Activity
         mirrorRoot = (LinearLayout) findViewById(R.id.mirror_root) ;
 
         // Set up shared preferences for alarm saving
-        preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        preferences = getSharedPreferences(getString(R.string.prefs), MODE_PRIVATE);
 
         dimmer = new Dimmer(getContentResolver());
 
@@ -116,7 +117,6 @@ public class Mirror extends Activity
                     {
                         weather.setLocation(location);
                     }
-
                 }
                 @Override
                 public void onStatusChanged(String provider, int status, Bundle extras) {}
@@ -299,7 +299,6 @@ public class Mirror extends Activity
                 }
             }
             else precipTile.setVisibility(View.GONE);
-
         }
     }
 
@@ -398,7 +397,6 @@ public class Mirror extends Activity
             alarmIcon.setVisibility(View.GONE);
 
             dimmer.setBright(true, preferences);
-
         }
         //Alarm has been set
         else
@@ -464,7 +462,6 @@ public class Mirror extends Activity
 
                     int tempBrightLevel = -1;
                     boolean bright = false;
-
 
                     JSONObject json;
                     try
@@ -565,7 +562,6 @@ public class Mirror extends Activity
             }
 
             return null;
-
         }
     }
 }
