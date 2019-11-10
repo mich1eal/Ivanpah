@@ -217,41 +217,23 @@ public class Mirror extends Activity
         int day = c.get(Calendar.DAY_OF_WEEK);
         int dayCount = c.get(Calendar.DAY_OF_WEEK_IN_MONTH);
 
-        /*
-        // Birthday
-        if (month == Calendar.FEBRUARY && date == 24)
+        // Grant birthday
+        if (month == Calendar.FEBRUARY && date == 27)
         {
             allWeather.setVisibility(View.GONE);
-            messageDisplay.setText("HAPPY\nBIRTHDAY\nMOM!!!\n");
+            messageDisplay.setText("HAPPY\nBIRTHDAY\nGRANT!!!\n");
             messageDisplay.setVisibility(View.VISIBLE);
             messageDisplay.setTextSize(125);
         }
-        // Mothers day
-        else if (month == Calendar.MAY && day == Calendar.SUNDAY && dayCount == 2)
+
+        // Grant birthday
+        if (month == Calendar.JUNE && date == 7)
         {
             allWeather.setVisibility(View.GONE);
-            messageDisplay.setText("HAPPY\nMOTHER'S\nDAY!!!\n");
+            messageDisplay.setText("HAPPY\nBIRTHDAY\nSTEPH!!!\n");
             messageDisplay.setVisibility(View.VISIBLE);
             messageDisplay.setTextSize(125);
         }
-        //Anniversary
-        else if (month == Calendar.JUNE && date == 18)
-        {
-            allWeather.setVisibility(View.GONE);
-            messageDisplay.setText("HAPPY\nANNIVERSARY!!!\n");
-            messageDisplay.setTextSize(75);
-            messageDisplay.setVisibility(View.VISIBLE);
-        }
-
-        else if (month == Calendar.SEPTEMBER && date == 30)
-        {
-            allWeather.setVisibility(View.GONE);
-            messageDisplay.setText("HAPPY\nBIRTHDAY\nDAD!!!\n");
-            messageDisplay.setTextSize(75);
-            messageDisplay.setVisibility(View.VISIBLE);
-        }*/
-
-        //else
 
         {
             allWeather.setVisibility(View.VISIBLE);
