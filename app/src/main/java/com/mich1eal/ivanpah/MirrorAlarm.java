@@ -24,8 +24,9 @@ public class MirrorAlarm
 
     private static final String HUE_URL_BASE = "http://";
     private static String HUE_IP;
-    private static final String HUE_URL_END1 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/2/state";
-    private static final String HUE_URL_END2 = "/api/qsrRaSO7t7sb6MyAa8saqzgCZMCelVPNUIY1qJWL/lights/1/state";
+
+    private static final String HUE_URL_END1 = "/api/EZnSeFL3GsEUYmqlnmFzahixYz3B4r8ohS-WPGyE/lights/2/state";
+    private static final String HUE_URL_END2 = "/api/EZnSeFL3GsEUYmqlnmFzahixYz3B4r8ohS-WPGyE/lights/1/state";
 
     private static boolean isHueOn = false;
 
