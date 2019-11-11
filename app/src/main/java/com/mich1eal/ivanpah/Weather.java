@@ -23,12 +23,11 @@ public class Weather
 
     private boolean hasValues = false;
     private int temp;
-    private int min;
-    private int max;
-    private String cond;
-    private double precipChance;
-    private String precipType;
-    private boolean isPrecip;
+    private int min, tomorrowMin;
+    private int max, tomorrowMax;
+    private String cond, tomorrowCond;
+    private double precipChance, tomorrowPrecipChance;
+    private String precipType, tomorrowPrecipType;
     private long sunRise = -1;
     private long sunSet = -1;
 
@@ -50,15 +49,33 @@ public class Weather
         getNewData();
     }
 
-
     public int getTemp(){return temp;}
-    public int getMin(){return min;}
-    public int getMax(){return max;}
-    public String getCond(){return cond;}
-    public double getPrecipChance(){return precipChance;}
-    public String getPrecipType(){return precipType;}
+    public int getMin(boolean today)
+    {
+        if (today) return min;
+        else return tomorrowMin;
+    }
+    public int getMax(boolean today)
+    {
+        if (today) return max;
+        else return tomorrowMax;
+    }
+    public String getCond(boolean today)
+    {
+        if (today) return cond;
+        else return tomorrowCond;
+    }
+    public double getPrecipChance(boolean today)
+    {
+        if (today) return precipChance;
+        else return tomorrowPrecipChance;
+    }
+    public String getPrecipType(boolean today)
+    {
+        if (today) return precipType;
+        else return tomorrowPrecipType;
+    }
     public boolean hasValues(){return hasValues;}
-    public boolean isPrecip(){return isPrecip;}
     public long getSunrise(){return sunRise;}
     public long getSunSet(){return sunSet;}
 
@@ -133,14 +150,22 @@ public class Weather
 
             String iconStr = now.getString("icon");
             cond = getCondString(iconStr);
-            isPrecip = iconStr.equals("rain") || iconStr.equals("sleet") || iconStr.equals("snow");
 
             // JSON > daily > data > 0 (today's datapoint)
             JSONObject today = lastJSON.getJSONObject("daily").getJSONArray("data").getJSONObject(0);
-            min = today.getInt("temperatureMin");
-            max = today.getInt("temperatureMax");
+            min = today.getInt("temperatureLow");
+            max = today.getInt("temperatureHigh");
             sunRise = today.getLong("sunriseTime");
             sunSet = today.getLong("sunsetTime");
+
+            // JSON > daily > data > 1 (tomorrows's datapoint)
+            JSONObject tomorrow = lastJSON.getJSONObject("daily").getJSONArray("data").getJSONObject(1);
+            tomorrowMin = tomorrow.getInt("temperatureLow");
+            tomorrowMax = tomorrow.getInt("temperatureHigh");
+            String tomorrowIcon = tomorrow.getString("icon");
+            tomorrowCond = getCondString(tomorrowIcon);
+
+
         }
         catch (JSONException e)
         {
@@ -155,6 +180,19 @@ public class Weather
             JSONObject today = lastJSON.getJSONObject("daily").getJSONArray("data").getJSONObject(0);
             precipType = "wi_" + today.getString("precipType");
             precipChance = (float) today.getDouble("precipProbability");
+        }
+        catch (JSONException e)
+        {
+            Log.e(TAG, e.getMessage());
+        }
+
+        // And tomorrow's predcip change
+        tomorrowPrecipChance = 0;
+        try
+        {
+            JSONObject tomorrow = lastJSON.getJSONObject("daily").getJSONArray("data").getJSONObject(1);
+            tomorrowPrecipType = "wi_" + tomorrow.getString("precipType");
+            tomorrowPrecipChance = (float) tomorrow.getDouble("precipProbability");
         }
         catch (JSONException e)
         {

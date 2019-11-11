@@ -9,6 +9,7 @@
     <string name="date_format24">EEEE, MMMM d</string>
 
     <string name="placeholder">-</string>
+    <string name="weather_tomorrow">Tomorrow</string>
     <string name="bluetooth_name">Ivanpah Smart Mirror</string>
     <string name="no_bluetooth">Sorry, Ivanpah only works on bluetooth enabled devices</string>
 

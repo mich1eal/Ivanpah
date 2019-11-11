@@ -70,6 +70,7 @@
         android:id="@+id/allWeather"
         android:orientation="horizontal"
         android:layout_gravity="top">
+            />
 
         <!-- Weather tile !-->
         <LinearLayout
@@ -79,6 +80,17 @@
             android:background="@drawable/tile_thin_white"
             android:layout_marginTop="80dp"
             android:padding="15dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:gravity="center_horizontal"
+                android:id="@+id/mirror_text_tomorrow"
+                android:textColor="@android:color/white"
+                android:textSize="40sp"
+                android:text="@string/weather_tomorrow"
+                />
 
             <TextView
                 android:layout_width="wrap_content"

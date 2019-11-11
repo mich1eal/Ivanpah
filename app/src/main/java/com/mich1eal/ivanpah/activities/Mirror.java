@@ -53,7 +53,7 @@ public class Mirror extends Activity
     private static int defaultMinsToHue = 20;
     public static int hueMins = defaultMinsToHue;
 
-    private static TextView temp, max, min, icon, precipType, precipPercent, alarmIcon, alarmText, messageDisplay;
+    private static TextView temp, max, min, icon, precipType, precipPercent, alarmIcon, alarmText, messageDisplay, tomorrowText;
     private static LinearLayout precipTile, allWeather, mirrorRoot;
 
     private static Typeface weatherFont, iconFont, defaultFont;
@@ -96,6 +96,7 @@ public class Mirror extends Activity
         messageDisplay = (TextView) findViewById(R.id.messageView);
         allWeather = (LinearLayout) findViewById(R.id.allWeather);
         mirrorRoot = (LinearLayout) findViewById(R.id.mirror_root) ;
+        tomorrowText = (TextView) findViewById(R.id.mirror_text_tomorrow);
 
         // Set up shared preferences for alarm saving
         preferences = getSharedPreferences(getString(R.string.prefs), MODE_PRIVATE);
@@ -226,8 +227,8 @@ public class Mirror extends Activity
             messageDisplay.setTextSize(125);
         }
 
-        // Grant birthday
-        if (month == Calendar.JUNE && date == 7)
+        // Steph birthday
+        else if (month == Calendar.JUNE && date == 7)
         {
             allWeather.setVisibility(View.GONE);
             messageDisplay.setText("HAPPY\nBIRTHDAY\nSTEPH!!!\n");
@@ -235,17 +236,32 @@ public class Mirror extends Activity
             messageDisplay.setTextSize(125);
         }
 
+        else
         {
+            boolean showToday = true;
+            //If it's after sunset, show tomorrow's weather
+            if (c.getTimeInMillis() > weather.getSunSet() * 1000)
+            {
+                showToday = false;
+                tomorrowText.setVisibility(View.VISIBLE);
+                temp.setVisibility(View.GONE);
+            }
+            else
+            {
+                temp.setVisibility(View.VISIBLE);
+                tomorrowText.setVisibility(View.GONE);
+            }
+
             allWeather.setVisibility(View.VISIBLE);
             messageDisplay.setVisibility(View.GONE);
 
             //Set temps
             temp.setText(weather.getTemp() + " \u2109");
-            min.setText(weather.getMin() + " \u2109");
-            max.setText(weather.getMax() + " \u2109");
+            min.setText(weather.getMin(showToday) + " \u2109");
+            max.setText(weather.getMax(showToday) + " \u2109");
 
             // Set master icon
-            String cond = weather.getCond();
+            String cond = weather.getCond(showToday);
             try
             {
                 int id = getResources().getIdentifier(cond, "string", getPackageName());
@@ -260,13 +276,13 @@ public class Mirror extends Activity
             }
 
             // Set precip tile
-            //If precip chance is over threshold and its not already raining
-            if (weather.getPrecipChance() >= minRainDisplay && !weather.isPrecip())
+            //If precip chance is over threshold
+            if (weather.getPrecipChance(showToday) >= minRainDisplay)
             {
-                String precipString = weather.getPrecipType();
+                String precipString = weather.getPrecipType(showToday);
 
                 //convert float to int%
-                String str = String.valueOf((int) (weather.getPrecipChance() * 100)) + '%';
+                String str = String.valueOf((int) (weather.getPrecipChance(showToday) * 100)) + '%';
                 precipPercent.setText(str);
 
                 try
