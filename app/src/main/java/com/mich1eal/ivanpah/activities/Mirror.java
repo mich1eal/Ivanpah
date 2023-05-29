@@ -44,7 +44,7 @@ public class Mirror extends Activity
 
     private final static String PREFS_ALARM = "ALARM_TIME_PREFERENCE";
 
-    private final static long weatherDelay = 10 * 60 * 1000; //Time between weather updates in millis
+    private final static long weatherDelay = 15 * 60 * 1000; //Time between weather updates in millis
     private final static long duoDelay = 5 * 1000; // Time between duolingo updates in millis
     private final static double minRainDisplay = .1; //Minimum threshold for displaying rain prob
     private final static int DUO_SNOOZE = 2; // Minutes to snooze each time a heartbeat is recieved
@@ -52,6 +52,7 @@ public class Mirror extends Activity
     private static String hueIP;
     private static int defaultMinsToHue = 20;
     public static int hueMins = defaultMinsToHue;
+
 
     private static TextView temp, max, min, icon, precipType, precipPercent, alarmIcon, alarmText, messageDisplay;
     private static LinearLayout precipTile, allWeather, mirrorRoot;
@@ -105,6 +106,7 @@ public class Mirror extends Activity
         //Initialize weather
         weather = new Weather(this);
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
         if (locationManager != null)
         {
             locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, new LocationListener(){
@@ -126,6 +128,7 @@ public class Mirror extends Activity
                 public void onProviderDisabled(String provider) {}
             }, null);
         }
+
         weather.setAutoUpdate(new Handler(), weatherDelay);
 
         // Initialize fonts
@@ -135,6 +138,7 @@ public class Mirror extends Activity
 
         // Initialize constant fonts
         precipType.setTypeface(weatherFont);
+
         alarmIcon.setTypeface(iconFont);
 
         duolingo = new Duolingo();
@@ -263,16 +267,15 @@ public class Mirror extends Activity
             max.setText(weather.getMax() + " \u2109");
 
             // Set master icon
-            String cond = weather.getCond();
+            int iconId = weather.getConditionIconId(c.getTimeInMillis() / 1000);
             try
             {
-                int id = getResources().getIdentifier(cond, "string", getPackageName());
-                icon.setText(getResources().getString(id));
+                icon.setText(getResources().getString(iconId));
                 icon.setTypeface(weatherFont);
             }
             catch(Exception e)
             {
-                Log.d("MAIN", "No icon found for String " + cond);
+                Log.d("MAIN", "Unable to set icon to " + iconId);
                 icon.setText("-");
                 icon.setTypeface(defaultFont);
             }
@@ -281,22 +284,11 @@ public class Mirror extends Activity
             //If precip chance is over threshold and its not already raining
             if (weather.getPrecipChance() >= minRainDisplay && !weather.isPrecip())
             {
-                String precipString = weather.getPrecipType();
-
                 //convert float to int%
                 String str = String.valueOf((int) (weather.getPrecipChance() * 100)) + '%';
                 precipPercent.setText(str);
 
-                try
-                {
-                    int id = getResources().getIdentifier(precipString, "string", getPackageName());
-                    precipType.setText(getResources().getString(id));
-                    precipTile.setVisibility(View.VISIBLE);
-                } catch (Exception e)
-                {
-                    Log.d("MAIN", "No icon found for String " + precipString);
-                    precipTile.setVisibility(View.GONE);
-                }
+                precipTile.setVisibility(View.VISIBLE);
             }
             else precipTile.setVisibility(View.GONE);
         }

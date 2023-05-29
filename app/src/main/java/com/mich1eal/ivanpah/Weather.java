@@ -15,7 +15,12 @@ public class Weather
         extends JSONGetter
 {
     private static final String TAG = "WEATHER";
-    private static final String APIKey = "310a6b004645167adf0d695576d45819";
+
+    // Strings for use in API
+    private static final String APIKey = "d2779b6f3abf700f12c9171e9db1bc99";
+    private static final String excludeString = "minutely,hourly,alerts";
+    private static final String unitString = "imperial";
+
     private WeatherUpdateListener listener;
 
     private Location location = null;
@@ -25,9 +30,8 @@ public class Weather
     private int temp;
     private int min;
     private int max;
-    private String cond;
+    private int weatherCode = -1;
     private double precipChance;
-    private String precipType;
     private boolean isPrecip;
     private long sunRise = -1;
     private long sunSet = -1;
@@ -54,9 +58,7 @@ public class Weather
     public int getTemp(){return temp;}
     public int getMin(){return min;}
     public int getMax(){return max;}
-    public String getCond(){return cond;}
     public double getPrecipChance(){return precipChance;}
-    public String getPrecipType(){return precipType;}
     public boolean hasValues(){return hasValues;}
     public boolean isPrecip(){return isPrecip;}
     public long getSunrise(){return sunRise;}
@@ -75,43 +77,129 @@ public class Weather
     {
         if (location == null) return;
 
-        String apiurl = "https://api.darksky.net/forecast/" +
-                APIKey + '/' +
-                location.getLatitude() + ',' +
-                location.getLongitude();
+        String apiurl = "https://api.openweathermap.org/data/3.0/onecall?lat=" + location.getLatitude() +
+                "&lon=" + location.getLongitude() +
+                "&exclude=" + excludeString +
+                "&appid=" + APIKey +
+                "&units=" + unitString;
+
         super.getJSON(apiurl);
     }
+    public int getConditionIconId(long now){
+        // now needs to be in seconds
+        // Returns R.string id for the icon to display
+        // if not set, use day icons
 
-    private String getCondString(String in)
-    {
-        StringBuilder out = new StringBuilder("wi_");
-        String[] strs = in.split("-");
-
-        int n = strs.length;
-        if (n == 1)
-        {
-            out.append(strs[0]);
+        boolean isDay = true;
+        // we will use day unless we have sunset/sunrise data
+        if (sunRise > 0 && sunSet > 0) {
+            isDay = now > sunRise && now < sunSet;
         }
-        else if (n > 1)
-        {
-            // First say if it's day or night
-            out.append(strs[n - 1]);
-            // Then the conditions
-            for (int i = 0; i < n - 1; i++)
-            {
-                out.append('_');
-                out.append(strs[i]);
+        return getConditionIconId(weatherCode, isDay);
+    }
+
+    private int getConditionIconId(int code, boolean isDay)
+    {
+        // Map weather codes to icon strings according to doc/weather_icon_map.xlsx
+        if (code < 300) {
+            //Thunderstorm
+            if (code == 200 || code == 210) {
+                return isDay ? R.string.wi_day_storm_showers : R.string.wi_night_alt_storm_showers;
+            }
+            else {
+                return isDay ? R.string.wi_day_thunderstorm : R.string.wi_night_alt_thunderstorm;
             }
         }
-        String outStr = out.toString();
+        else if (code < 400) {
+            //Drizzle
+            if (code == 310 || code == 311 || code == 312) {
+                return isDay ? R.string.wi_day_rain : R.string.wi_night_alt_rain;
+            }
+            else if (code >= 313 && code < 330) {
+                return isDay ? R.string.wi_day_showers : R.string.wi_night_alt_showers;
+            }
+            else {
+                return isDay ? R.string.wi_day_fog : R.string.wi_night_fog;
+            }
+        }
+        else if (code >= 500 && code < 600) {
+            if (code < 510) {
+                return isDay ? R.string.wi_day_rain : R.string.wi_night_alt_rain;
+            }
+            else if (code < 520) {
+                return isDay ? R.string.wi_day_rain_mix : R.string.wi_night_alt_rain_mix;
+            }
+            else if (code < 540) {
+                return isDay ? R.string.wi_day_showers : R.string.wi_night_alt_showers;
+            }
+            else {
+                return isDay ? R.string.wi_day_rain : R.string.wi_night_alt_rain;
+            }
+        }
+        else if (code < 700) {
+            if (code < 610) {
+                return isDay ? R.string.wi_day_snow : R.string.wi_night_alt_snow;
+            }
+            else if (code == 611) {
+                return isDay ? R.string.wi_day_hail : R.string.wi_night_alt_hail;
+            }
+            else if (code == 612 || code == 613) {
+                return isDay ? R.string.wi_day_sleet : R.string.wi_night_alt_sleet;
+            }
+            else if (code < 620) {
+                return isDay ? R.string.wi_day_rain_mix : R.string.wi_night_alt_rain_mix;
+            }
+            else {
+                return isDay ? R.string.wi_day_snow : R.string.wi_night_alt_snow;
+            }
+        }
+        else if (code < 800) {
+            if (code < 710) {
+                return isDay ? R.string.wi_day_fog : R.string.wi_night_fog;
+            }
+            else if (code < 720) {
+                return R.string.wi_smoke;
+            }
+            else if (code < 730) {
+                return isDay ? R.string.wi_day_haze : R.string.wi_dust;
+            }
+            else if (code < 740) {
+                return R.string.wi_dust;
+            }
+            else if (code < 750) {
+                return isDay ? R.string.wi_day_fog : R.string.wi_night_fog;
+            }
+            else if (code < 760) {
+                return R.string.wi_sandstorm;
+            }
+            else if (code < 770) {
+                return R.string.wi_dust;
+            }
+            else if (code < 780) {
+                return isDay ? R.string.wi_day_thunderstorm : R.string.wi_night_alt_thunderstorm;
+            }
+            else if (code < 790) {
+                return R.string.wi_tornado;
+            }
+            else {
+                return R.string.wi_dust;
+            }
+        }
+        else if (code < 810) {
+            if (code == 800) {
+                return isDay ? R.string.wi_day_sunny : R.string.wi_night_clear;
+            }
+            else if (code == 801 || code == 802) {
+                return isDay ? R.string.wi_day_sunny_overcast : R.string.wi_night_alt_partly_cloudy;
+            }
+            else if (code < 810) {
+                return isDay ? R.string.wi_day_cloudy : R.string.wi_night_alt_cloudy;
+            }
+        }
 
-        if (outStr.equals("wi_day_partly_cloudy")) outStr = "wi_day_cloudy";
-        if (outStr.equals("wi_day_clear")) outStr = "wi_day_sunny";
-
-
-        Log.d(TAG, "Condition icon: " + outStr);
-
-        return outStr;
+        // else
+        Log.e(TAG, "Unknown weather code received");
+        return R.string.wi_thermometer_exterior;
     }
 
     private void updateData()
@@ -125,36 +213,34 @@ public class Weather
 
         try
         {
-            // look at the API guide https://developer.forecast.io/docs/v2
-            JSONObject now = lastJSON.getJSONObject("currently");
-            temp = now.getInt("temperature");
+            // look at the API guide https://openweathermap.org/api/one-call-3#data
+            JSONObject now = lastJSON.getJSONObject("current");
+            temp = now.getInt("temp");
 
-            JSONArray days = lastJSON.getJSONObject("daily").getJSONArray("data");
-
-            String iconStr = now.getString("icon");
-            cond = getCondString(iconStr);
-            isPrecip = iconStr.equals("rain") || iconStr.equals("sleet") || iconStr.equals("snow");
+            weatherCode = now.getJSONArray("weather").getJSONObject(0).getInt("id");
+            // precipitation codes representing active precipitation
+            // see https://openweathermap.org/weather-conditions#Weather-Condition-Codes-2
+            final int firstDigit = weatherCode/100;
+            isPrecip = firstDigit == 2 || firstDigit == 5 || firstDigit == 6;
 
             // JSON > daily > data > 0 (today's datapoint)
-            JSONObject today = lastJSON.getJSONObject("daily").getJSONArray("data").getJSONObject(0);
-            min = today.getInt("temperatureMin");
-            max = today.getInt("temperatureMax");
-            sunRise = today.getLong("sunriseTime");
-            sunSet = today.getLong("sunsetTime");
+            JSONObject today = lastJSON.getJSONArray("daily").getJSONObject(0);
+            min = (int) today.getJSONObject("temp").getDouble("min");
+            max = (int) today.getJSONObject("temp").getDouble("max");
+            sunRise = today.getLong("sunrise");
+            sunSet = today.getLong("sunset");
         }
         catch (JSONException e)
         {
             Log.e(TAG, e.getMessage());
         }
 
-        // Rain data isn't always available so fetch it seperately
+        // Rain data isn't always available so fetch it separately
         precipChance = 0;
-
         try
         {
-            JSONObject today = lastJSON.getJSONObject("daily").getJSONArray("data").getJSONObject(0);
-            precipType = "wi_" + today.getString("precipType");
-            precipChance = (float) today.getDouble("precipProbability");
+            JSONObject today = lastJSON.getJSONArray("daily").getJSONObject(0);
+            precipChance = (float) today.getDouble("pop");
         }
         catch (JSONException e)
         {

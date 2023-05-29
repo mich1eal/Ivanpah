@@ -146,6 +146,8 @@
     <string name="wi_volcano">&#xf0c8;</string>
     <string name="wi_hurricane">&#xf073;</string>
     <string name="wi_tornado">&#xf056;</string>
+    <string name="wi_umbrella">&#xf084;</string>
+    <string name="wi_thermometer_exterior">&#xf053;</string>
 
 
 </resources>

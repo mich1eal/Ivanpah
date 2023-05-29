@@ -153,7 +153,8 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/precipType"
                 android:textSize="70dp"
-                android:textColor="@android:color/white"/>
+                android:textColor="@android:color/white"
+                android:text="@string/wi_umbrella"/>
 
             <TextView
                 android:layout_width="wrap_content"
