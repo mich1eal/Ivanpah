@@ -1,17 +1,43 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             xmlns:tools="http://schemas.android.com/tools"
-             android:layout_width="match_parent"
-             android:layout_height="wrap_content"
-              android:orientation="vertical"
-             android:background="#000000"
-             tools:context=".main">
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:id="@+id/mirror_root"
+    android:background="#000000"
+    tools:context=".main">
 
+    <!-- Notifications bar-->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/alarmIcon"
+            android:text="@string/alarm_icon"
+            android:visibility="gone"
+            android:textColor="#FFF04C"
+            android:textSize="60dp"
+            />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/alarmText"
+            android:text="@string/alarm_test"
+            android:visibility="gone"
+            android:textColor="#FFF04C"
+            android:textSize="60dp"/>
+    </LinearLayout>
 
     <TextClock
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/clock"
-        android:format12Hour="@string/time_format"
+        android:format12Hour="@string/time_format12"
+        android:format24Hour="@string/time_format24"
         android:textColor="@android:color/white"
         android:textSize="230sp"
         android:layout_marginTop="-60sp"
@@ -22,7 +48,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/date"
-        android:format12Hour="@string/date_format"
+        android:format12Hour="@string/date_format12"
+        android:format24Hour="@string/date_format24"
         android:textColor="@android:color/white"
         android:textSize="50sp"
         />
@@ -35,8 +62,6 @@
         android:layout_marginTop="50dp"
         android:textColor="@android:color/white"
         />
-
-
 
     <!-- container for weather tile and rain chance !-->
     <LinearLayout
@@ -128,7 +153,8 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/precipType"
                 android:textSize="70dp"
-                android:textColor="@android:color/white"/>
+                android:textColor="@android:color/white"
+                android:text="@string/wi_umbrella"/>
 
             <TextView
                 android:layout_width="wrap_content"
@@ -136,9 +162,6 @@
                 android:id="@+id/precipPercent"
                 android:textColor="@android:color/white"
                 android:textSize="50dp"/>
-
         </LinearLayout> <!-- end precip tile -->
-
     </LinearLayout> <!-- end tile frame -->
-
 </LinearLayout>
