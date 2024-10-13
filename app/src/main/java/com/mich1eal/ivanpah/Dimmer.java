@@ -2,7 +2,9 @@ package com.mich1eal.ivanpah;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -22,13 +24,27 @@ public class Dimmer
     private static String dayLevel = "DAY_LEVEL";
     private static String nightLevel = "NIGHT_LEVEL";
 
-    public Dimmer(ContentResolver contentResolver)
+    public Dimmer(Context context, ContentResolver contentResolver)
     {
-        this.contentResolver = contentResolver;
+        if (!Settings.System.canWrite(context)) {
+            Log.d(TAG, "Cannot write settings");
+            this.contentResolver = null;
+            Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS);
+            intent.setData(Uri.parse("package:" + context.getPackageName()));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        }
+        else
+        {
+            Log.d(TAG, "Can write settings");
+            this.contentResolver = contentResolver;
 
-        Settings.System.putInt(contentResolver,
-                Settings.System.SCREEN_BRIGHTNESS_MODE,
-                Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+            Settings.System.putInt(contentResolver,
+                    Settings.System.SCREEN_BRIGHTNESS_MODE,
+                    Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+        }
+
+
     }
 
     public void updateBrightness(SharedPreferences prefs, int value, boolean bright)

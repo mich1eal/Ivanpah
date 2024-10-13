@@ -1,11 +1,13 @@
 package com.mich1eal.ivanpah.activities;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Typeface;
 import android.location.Location;
 import android.location.LocationListener;
@@ -14,7 +16,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -101,34 +102,35 @@ public class Mirror extends Activity
         // Set up shared preferences for alarm saving
         preferences = getSharedPreferences(getString(R.string.prefs), MODE_PRIVATE);
 
-        dimmer = new Dimmer(getContentResolver());
+        dimmer = new Dimmer(this, getContentResolver());
 
         //Initialize weather
         weather = new Weather(this);
+
+
         LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-        if (locationManager != null)
-        {
-            locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, new LocationListener(){
+        if (locationManager != null) {
+            locationManager.requestSingleUpdate(LocationManager.NETWORK_PROVIDER, new LocationListener() {
 
                 @Override
-                public void onLocationChanged(Location location)
-                {
+                public void onLocationChanged(Location location) {
                     Log.d(TAG, "onLocationChanged");
-                    if (location != null)
-                    {
+                    if (location != null) {
                         weather.setLocation(location);
                     }
                 }
+
                 @Override
                 public void onStatusChanged(String provider, int status, Bundle extras) {}
+
                 @Override
                 public void onProviderEnabled(String provider) {}
+
                 @Override
                 public void onProviderDisabled(String provider) {}
             }, null);
         }
-
         weather.setAutoUpdate(new Handler(), weatherDelay);
 
         // Initialize fonts
